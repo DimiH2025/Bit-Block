@@ -1,6 +1,7 @@
-modules = ["bash"]
+modules = ["bash", "nodejs-20"]
 [agent]
 expertMode = true
 
 [nix]
 channel = "stable-25_05"
+packages = ["unzip"]
