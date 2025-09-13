@@ -4,4 +4,27 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["unzip", "cmake", "pkgconf", "sqlite", "boost", "libevent"]
+packages = ["unzip", "cmake", "pkgconf", "sqlite", "boost", "libevent", "patch"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Bitcoin Knots Demo"
+
+[[workflows.workflow]]
+name = "Bitcoin Knots Demo"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash scripts/smoke_knots.sh"
+
+[workflows.workflow.metadata]
+outputType = "console"
