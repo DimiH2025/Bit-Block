@@ -4,7 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["unzip", "cmake", "pkgconf", "sqlite", "boost", "libevent", "patch"]
+packages = ["unzip", "cmake", "pkgconf", "sqlite", "boost", "libevent", "patch", "curl", "gnupg", "gnutar"]
 
 [workflows]
 runButton = "Project"
@@ -28,3 +28,7 @@ args = "bash scripts/smoke_knots.sh"
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[deployment]
+deploymentTarget = "vm"
+run = ["bash", "/app/scripts/secure_startup.sh"]
