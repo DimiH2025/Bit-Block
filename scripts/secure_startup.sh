@@ -1,13 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-# Bitcoin Knots Security-Hardened Startup Script
+# Bit-block Security-Hardened Startup Script
 # This script provides secure deployment configuration
 
 # Generate secure RPC credentials if not already set
 DATADIR="/app/.bitcoin-regtest"
 CONFIG_FILE="$DATADIR/bitcoin.conf"
-RPC_USER="${BITCOIN_RPC_USER:-btcknots}"
+RPC_USER="${BITCOIN_RPC_USER:-bitblock}"
 
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*" >&2
@@ -26,7 +26,7 @@ generate_secure_password() {
 }
 
 setup_secure_config() {
-    log "Setting up secure Bitcoin Knots configuration..."
+    log "Setting up secure Bit-block configuration..."
     
     # Ensure data directory exists with proper permissions
     mkdir -p "$DATADIR"
@@ -39,7 +39,7 @@ setup_secure_config() {
         log "Creating secure bitcoin.conf configuration..."
         
         cat > "$CONFIG_FILE" << EOF
-# Bitcoin Knots Security-Hardened Configuration
+# Bit-block Security-Hardened Configuration
 # Generated on $(date)
 
 # Network settings
@@ -121,26 +121,26 @@ verify_security() {
 }
 
 start_bitcoind() {
-    local BITCOIND_PATH="/app/bin/knots/bin/bitcoind"
+    local BITCOIND_PATH="$(pwd)/bin/bit-block/bin/bitcoind"
     
     if [ ! -x "$BITCOIND_PATH" ]; then
         log "ERROR: bitcoind not found or not executable at $BITCOIND_PATH"
         exit 1
     fi
     
-    log "Starting Bitcoin Knots daemon with secure configuration..."
+    log "Starting Bit-block daemon with secure configuration..."
     
     # Start with configuration file instead of command line arguments
     exec "$BITCOIND_PATH" -conf="$CONFIG_FILE" -datadir="$DATADIR"
 }
 
 main() {
-    log "=== Bitcoin Knots Security-Hardened Startup ==="
+    log "=== Bit-block Security-Hardened Startup ==="
     
     # Run the smoke test first to ensure binaries are available  
     SCRIPT_DIR="$(dirname "$0")"
-    if ! "$SCRIPT_DIR/smoke_knots.sh"; then
-        log "ERROR: Bitcoin Knots smoke test failed"
+    if ! "$SCRIPT_DIR/smoke_bit-block.sh"; then
+        log "ERROR: Bit-block smoke test failed"
         exit 1
     fi
     

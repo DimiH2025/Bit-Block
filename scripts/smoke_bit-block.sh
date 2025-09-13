@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Bitcoin Knots Security-Hardened Download and Verification Script
+# Bit-block Security-Hardened Download and Verification Script
 # This script implements proper cryptographic verification
 
 VERSION="29.1.knots20250903"
@@ -15,10 +15,10 @@ SIGNATURES_URL="${BASE_URL}/SHA256SUMS.asc"
 EXPECTED_SHA256="3752cf932309cd98734eb20ebb6c7aea4b8a10eb329b3d8d8fbd00098ea674fb"
 
 # Directory configuration with absolute paths for deployment safety
-BIN_DIR="$(pwd)/bin/knots/bin"
-DOWNLOAD_DIR="/tmp/bitcoin-knots-download"
-CACHE_FILE="$(pwd)/.knots_downloaded"
-VERIFICATION_FILE="$(pwd)/.knots_verified"
+BIN_DIR="$(pwd)/bin/bit-block/bin"
+DOWNLOAD_DIR="/tmp/bitcoin-bit-block-download"
+CACHE_FILE="$(pwd)/.bit-block_downloaded"
+VERIFICATION_FILE="$(pwd)/.bit-block_verified"
 
 # Logging and error handling
 log() {
@@ -77,7 +77,7 @@ verify_gpg_signature() {
     
     log "Attempting GPG signature verification..."
     
-    # Import Bitcoin Knots keys (non-fatal if fails)
+    # Import Bit-block keys (non-fatal if fails)
     if ! gpg --keyserver hkps://keys.openpgp.org --recv-keys \
         "0x57A1BC5C4CA6D34D" \
         "0x1A4FE32615E9D5C6" \
@@ -99,7 +99,7 @@ download_and_verify() {
     cd "$DOWNLOAD_DIR"
     
     # Download all verification files
-    log "Downloading Bitcoin Knots ${VERSION} and verification files..."
+    log "Downloading Bit-block ${VERSION} and verification files..."
     
     if ! curl -fSL --retry 3 --retry-delay 5 -o "$TARBALL" "$TARBALL_URL"; then
         error_exit "Failed to download tarball"
@@ -133,7 +133,7 @@ download_and_verify() {
 }
 
 extract_binaries() {
-    log "Extracting Bitcoin Knots binaries..."
+    log "Extracting Bit-block binaries..."
     
     # Create bin directory with proper permissions
     mkdir -p "$BIN_DIR"
@@ -155,7 +155,7 @@ extract_binaries() {
         fi
     done
     
-    log "✓ Bitcoin Knots binaries extracted and verified"
+    log "✓ Bit-block binaries extracted and verified"
 }
 
 run_health_checks() {
@@ -179,14 +179,14 @@ run_health_checks() {
 }
 
 main() {
-    echo "=== Bitcoin Knots Security-Hardened Setup ==="
-    log "Starting Bitcoin Knots setup with security verification"
+    echo "=== Bit-block Security-Hardened Setup ==="
+    log "Starting Bit-block setup with security verification"
     
     # Check if already downloaded and verified
     if [ -f "$CACHE_FILE" ] && [ -f "$VERIFICATION_FILE" ] && [ -f "$BIN_DIR/bitcoind" ]; then
-        log "Bitcoin Knots binaries already available and verified"
+        log "Bit-block binaries already available and verified"
     else
-        log "Setting up Bitcoin Knots with cryptographic verification..."
+        log "Setting up Bit-block with cryptographic verification..."
         
         # Verify required tools are available
         verify_dependencies
@@ -204,11 +204,11 @@ main() {
         touch "$CACHE_FILE"
         echo "SHA256:$EXPECTED_SHA256" > "$VERIFICATION_FILE"
         
-        log "✓ Bitcoin Knots setup completed successfully"
+        log "✓ Bit-block setup completed successfully"
     fi
     
     echo ""
-    echo "=== Testing Bitcoin Knots Functionality ==="
+    echo "=== Testing Bit-block Functionality ==="
     
     # Test 1: Help command
     echo "1. Testing bitcoind help:"
@@ -236,8 +236,8 @@ main() {
     "$BIN_DIR/bitcoin-cli" -version
     echo ""
     
-    echo "✓ All Bitcoin Knots smoke tests passed!"
-    echo "Bitcoin Knots is working correctly in Replit environment"
+    echo "✓ All Bit-block smoke tests passed!"
+    echo "Bit-block is working correctly in Replit environment"
     echo "✓ Cryptographic verification completed - binaries are authentic"
 }
 

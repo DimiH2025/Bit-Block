@@ -16,19 +16,19 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Bitcoin Knots Demo"
+args = "Bit-block Demo"
 
 [[workflows.workflow]]
-name = "Bitcoin Knots Demo"
+name = "Bit-block Demo"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "bash scripts/smoke_knots.sh"
+args = "bash scripts/smoke_bit-block.sh"
 
 [workflows.workflow.metadata]
 outputType = "console"
 
 [deployment]
 deploymentTarget = "vm"
-run = ["bash", "/app/scripts/secure_startup.sh"]
+run = ["bash", "-c", "cd /app && bash scripts/smoke_bit-block.sh && exec bin/bit-block/bin/bitcoind -regtest -server=1 -rpcuser=demo -rpcpassword=demo123 -printtoconsole -fallbackfee=0.001 -datadir=/app/.bitcoin-regtest"]
