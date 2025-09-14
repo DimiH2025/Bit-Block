@@ -27,8 +27,20 @@ setup_secure_config() {
     log "Setting up secure Bit-block configuration..."
     
     # Ensure data directory exists with proper permissions
-    mkdir -p "$DATADIR"
+    log "Creating data directory: $DATADIR"
+    if ! mkdir -p "$DATADIR"; then
+        log "ERROR: Failed to create data directory: $DATADIR"
+        exit 1
+    fi
+    
+    # Verify directory was created successfully
+    if [ ! -d "$DATADIR" ]; then
+        log "ERROR: Data directory does not exist after creation: $DATADIR"
+        exit 1
+    fi
+    
     chmod 700 "$DATADIR"
+    log "✓ Data directory created successfully with secure permissions"
     
     # Generate secure RPC password if config doesn't exist
     if [ ! -f "$CONFIG_FILE" ]; then
@@ -51,13 +63,8 @@ natpmp=0
 # RPC Security
 rpcuser=$RPC_USER
 rpcpassword=$RPC_PASSWORD
-rpcbind=127.0.0.1
 rpcallowip=127.0.0.1
 rpcserialversion=1
-
-# Network restrictions
-bind=127.0.0.1
-whitelist=127.0.0.1
 
 # Performance and limits
 maxconnections=8
@@ -77,6 +84,12 @@ rejectparasites=1
 
 # Security
 disablewallet=0
+
+# Regtest-specific configuration
+[regtest]
+rpcbind=127.0.0.1
+bind=127.0.0.1
+whitelist=127.0.0.1
 EOF
         
         chmod 600 "$CONFIG_FILE"
@@ -169,7 +182,21 @@ start_bitcoind() {
         exit 1
     fi
     
+    # Final verification that data directory and config exist
+    if [ ! -d "$DATADIR" ]; then
+        log "ERROR: Data directory does not exist: $DATADIR"
+        exit 1
+    fi
+    
+    if [ ! -f "$CONFIG_FILE" ]; then
+        log "ERROR: Configuration file does not exist: $CONFIG_FILE"
+        exit 1
+    fi
+    
     log "Starting Bit-block daemon with secure configuration..."
+    log "Data directory: $DATADIR"
+    log "Configuration file: $CONFIG_FILE"
+    log "Bitcoin binary: $BITCOIND_PATH"
     
     # Start with configuration file instead of command line arguments
     exec "$BITCOIND_PATH" -conf="$CONFIG_FILE" -datadir="$DATADIR"

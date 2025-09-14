@@ -18,6 +18,10 @@ author = "agent"
 task = "workflow.run"
 args = "Bit-block Demo"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Bitcoin Daemon"
+
 [[workflows.workflow]]
 name = "Bit-block Demo"
 author = "agent"
@@ -29,6 +33,17 @@ args = "bash scripts/smoke_bit-block.sh"
 [workflows.workflow.metadata]
 outputType = "console"
 
+[[workflows.workflow]]
+name = "Bitcoin Daemon"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash scripts/secure_startup.sh"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [deployment]
 deploymentTarget = "vm"
-run = ["bash", "-c", "cd . && bash scripts/secure_startup.sh"]
+run = ["bash", "scripts/secure_startup.sh"]
