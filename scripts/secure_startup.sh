@@ -72,6 +72,8 @@ fallbackfee=0.001
 
 # Transaction policy
 datacarriersize=0
+rejecttokens=1
+rejectparasites=1
 
 # Security
 disablewallet=0
@@ -97,12 +99,20 @@ EOF
             log "RPC Password: [REDACTED]"
         fi
         
-        # Ensure datacarriersize=0 is present in existing config
+        # Ensure transaction policy settings are present in existing config
         if ! grep -q "^datacarriersize=0$" "$CONFIG_FILE"; then
             log "Adding datacarriersize=0 to existing configuration..."
             echo "" >> "$CONFIG_FILE"
             echo "# Transaction policy (added by secure startup)" >> "$CONFIG_FILE"
             echo "datacarriersize=0" >> "$CONFIG_FILE"
+        fi
+        if ! grep -q "^rejecttokens=1$" "$CONFIG_FILE"; then
+            log "Adding rejecttokens=1 to existing configuration..."
+            echo "rejecttokens=1" >> "$CONFIG_FILE"
+        fi
+        if ! grep -q "^rejectparasites=1$" "$CONFIG_FILE"; then
+            log "Adding rejectparasites=1 to existing configuration..."
+            echo "rejectparasites=1" >> "$CONFIG_FILE"
         fi
     fi
 }
@@ -126,11 +136,25 @@ verify_security() {
         log "WARNING: RPC binding may not be secure"
     fi
     
-    # Verify datacarriersize=0 is present
+    # Verify transaction policy settings are present
     if grep -q "^datacarriersize=0$" "$CONFIG_FILE"; then
         log "✓ datacarriersize=0 policy is active"
     else
         log "ERROR: datacarriersize=0 policy missing from configuration"
+        exit 1
+    fi
+    
+    if grep -q "^rejecttokens=1$" "$CONFIG_FILE"; then
+        log "✓ rejecttokens=1 policy is active (ignoring non-Bitcoin tokens)"
+    else
+        log "ERROR: rejecttokens=1 policy missing from configuration"
+        exit 1
+    fi
+    
+    if grep -q "^rejectparasites=1$" "$CONFIG_FILE"; then
+        log "✓ rejectparasites=1 policy is active (ignoring asset overlay protocols)"
+    else
+        log "ERROR: rejectparasites=1 policy missing from configuration"
         exit 1
     fi
     

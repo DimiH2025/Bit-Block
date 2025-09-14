@@ -407,9 +407,9 @@ bool OptionsModel::Init(bilingual_str& error)
     // Wallet
 #ifdef ENABLE_WALLET
     if (!settings.contains("SubFeeFromAmount")) {
-        settings.setValue("SubFeeFromAmount", false);
+        settings.setValue("SubFeeFromAmount", true);
     }
-    m_sub_fee_from_amount = settings.value("SubFeeFromAmount", false).toBool();
+    m_sub_fee_from_amount = settings.value("SubFeeFromAmount", true).toBool();
 #endif
 
     // Network
