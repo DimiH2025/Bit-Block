@@ -31,4 +31,4 @@ outputType = "console"
 
 [deployment]
 deploymentTarget = "vm"
-run = ["bash", "-c", "cd /app && bash scripts/smoke_bit-block.sh && exec bin/bit-block/bin/bitcoind -regtest -server=1 -rpcuser=demo -rpcpassword=demo123 -printtoconsole -fallbackfee=0.001 -datadir=/app/.bitcoin-regtest"]
+run = ["bash", "-c", "bash scripts/smoke_bit-block.sh && exec bin/bit-block/bin/bitcoind -regtest -server=1 -rpcuser=demo -rpcpassword=demo123 -printtoconsole -fallbackfee=0.001 -datadir=./.bitcoin-regtest"]
