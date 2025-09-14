@@ -95,8 +95,27 @@ verify_gpg_signature() {
 
 download_and_verify() {
     log "Creating secure download directory..."
-    mkdir -p "$DOWNLOAD_DIR"
-    cd "$DOWNLOAD_DIR"
+    
+    # Create download directory with error handling
+    if ! mkdir -p "$DOWNLOAD_DIR"; then
+        error_exit "Failed to create download directory: $DOWNLOAD_DIR"
+    fi
+    
+    # Verify directory was created successfully
+    if [ ! -d "$DOWNLOAD_DIR" ]; then
+        error_exit "Download directory does not exist after creation: $DOWNLOAD_DIR"
+    fi
+    
+    # Set proper permissions
+    if ! chmod 700 "$DOWNLOAD_DIR"; then
+        log "WARNING: Failed to set secure permissions on download directory"
+    fi
+    
+    log "✓ Secure download directory created: $DOWNLOAD_DIR"
+    
+    if ! cd "$DOWNLOAD_DIR"; then
+        error_exit "Failed to change to download directory: $DOWNLOAD_DIR"
+    fi
     
     # Download all verification files
     log "Downloading Bit-block ${VERSION} and verification files..."
@@ -135,12 +154,26 @@ download_and_verify() {
 extract_binaries() {
     log "Extracting Bit-block binaries..."
     
-    # Create bin directory with proper permissions
-    mkdir -p "$BIN_DIR"
+    # Create bin directory with proper permissions and error handling
+    if ! mkdir -p "$BIN_DIR"; then
+        error_exit "Failed to create bin directory: $BIN_DIR"
+    fi
+    
+    # Verify directory was created successfully
+    if [ ! -d "$BIN_DIR" ]; then
+        error_exit "Bin directory does not exist after creation: $BIN_DIR"
+    fi
+    
+    # Set proper permissions
+    if ! chmod 755 "$BIN_DIR"; then
+        log "WARNING: Failed to set permissions on bin directory"
+    fi
+    
+    log "✓ Bin directory created successfully: $BIN_DIR"
     
     # Extract with verification
     if ! tar -xzf "$DOWNLOAD_DIR/$TARBALL" -C "$BIN_DIR" --strip-components=1; then
-        error_exit "Failed to extract tarball"
+        error_exit "Failed to extract tarball to $BIN_DIR"
     fi
     
     # Verify extracted binaries exist and are executable
@@ -161,19 +194,35 @@ extract_binaries() {
 run_health_checks() {
     log "Running health checks..."
     
-    # Test version output
-    if ! "$BIN_DIR/bitcoind" -version >/dev/null 2>&1; then
-        error_exit "bitcoind version check failed"
-    fi
+    # Verify all required binaries exist before testing
+    local binaries=("bitcoind" "bitcoin-cli" "bitcoin-tx" "bitcoin-wallet")
+    for binary in "${binaries[@]}"; do
+        local binary_path="$BIN_DIR/$binary"
+        if [ ! -f "$binary_path" ]; then
+            error_exit "Required binary not found: $binary_path"
+        fi
+        if [ ! -x "$binary_path" ]; then
+            error_exit "Binary not executable: $binary_path"
+        fi
+    done
+    log "✓ All required binaries found and executable"
     
-    if ! "$BIN_DIR/bitcoin-cli" -version >/dev/null 2>&1; then
-        error_exit "bitcoin-cli version check failed"
+    # Test version output with better error reporting
+    if ! VERSION_OUTPUT=$("$BIN_DIR/bitcoind" -version 2>&1); then
+        error_exit "bitcoind version check failed: $VERSION_OUTPUT"
     fi
+    log "✓ bitcoind version check passed"
     
-    # Test help output
-    if ! "$BIN_DIR/bitcoind" -h >/dev/null 2>&1; then
-        error_exit "bitcoind help check failed"
+    if ! VERSION_OUTPUT=$("$BIN_DIR/bitcoin-cli" -version 2>&1); then
+        error_exit "bitcoin-cli version check failed: $VERSION_OUTPUT"
     fi
+    log "✓ bitcoin-cli version check passed"
+    
+    # Test help output with better error reporting
+    if ! HELP_OUTPUT=$("$BIN_DIR/bitcoind" -h 2>&1); then
+        error_exit "bitcoind help check failed: $HELP_OUTPUT"
+    fi
+    log "✓ bitcoind help check passed"
     
     log "✓ All health checks passed"
 }
@@ -223,12 +272,14 @@ main() {
     
     # Test 3: Invalid argument (should fail gracefully)
     echo "3. Testing error handling with invalid argument:"
-    if ERROR_OUTPUT=$("$BIN_DIR/bitcoind" -fakearg 2>&1 || true); then
-        if echo "$ERROR_OUTPUT" | grep -q "Error parsing command line arguments"; then
-            echo "✓ Correctly handled invalid argument"
-        else
-            log "WARNING: Unexpected error output format"
-        fi
+    if ! ERROR_OUTPUT=$("$BIN_DIR/bitcoind" -fakearg 2>&1 || true); then
+        log "WARNING: Failed to capture error output from bitcoind"
+    elif echo "$ERROR_OUTPUT" | grep -q "Error parsing command line arguments"; then
+        echo "✓ Correctly handled invalid argument"
+    elif echo "$ERROR_OUTPUT" | grep -q "Invalid argument"; then
+        echo "✓ Correctly handled invalid argument (alternative format)"
+    else
+        log "WARNING: Unexpected error output format: $ERROR_OUTPUT"
     fi
     
     echo ""

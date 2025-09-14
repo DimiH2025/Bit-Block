@@ -88,7 +88,6 @@ disablewallet=0
 # Regtest-specific configuration
 [regtest]
 rpcbind=127.0.0.1
-bind=127.0.0.1
 whitelist=127.0.0.1
 EOF
         
@@ -112,20 +111,114 @@ EOF
             log "RPC Password: [REDACTED]"
         fi
         
+        # Check if configuration needs migration for regtest section
+        local needs_migration=false
+        
+        # Check if [regtest] section exists and contains required settings
+        if ! grep -q "^\[regtest\]" "$CONFIG_FILE"; then
+            log "Configuration missing [regtest] section - migration needed"
+            needs_migration=true
+        elif ! sed -n '/^\[regtest\]/,$ p' "$CONFIG_FILE" | grep -q '^rpcbind=127\.0\.0\.1$'; then
+            log "Configuration [regtest] section missing rpcbind - migration needed"
+            needs_migration=true
+        fi
+        
+        # Check if global rpcbind/bind settings exist (should be in [regtest] only)
+        if awk '/^\[regtest\]/,/^\[/{next} /^rpcbind=/ || /^bind=/{exit 0} END{exit 1}' "$CONFIG_FILE"; then
+            log "Configuration has global rpcbind/bind settings - migration needed"
+            needs_migration=true
+        fi
+        
+        if [ "$needs_migration" = "true" ]; then
+            log "Migrating existing configuration to fix [regtest] section..."
+            
+            # Backup existing config
+            cp "$CONFIG_FILE" "$CONFIG_FILE.backup.$(date +%s)"
+            log "✓ Configuration backed up"
+            
+            # Preserve existing RPC credentials if available
+            local existing_rpc_user
+            local existing_rpc_password
+            existing_rpc_user=$(grep "^rpcuser=" "$CONFIG_FILE" | cut -d'=' -f2-)
+            existing_rpc_password=$(grep "^rpcpassword=" "$CONFIG_FILE" | cut -d'=' -f2-)
+            
+            if [ -n "$existing_rpc_user" ] && [ -n "$existing_rpc_password" ]; then
+                RPC_USER="$existing_rpc_user"
+                RPC_PASSWORD="$existing_rpc_password"
+                log "✓ Preserved existing RPC credentials"
+            else
+                RPC_PASSWORD=$(generate_secure_password)
+                log "✓ Generated new secure RPC password"
+            fi
+            
+            # Generate new configuration with proper [regtest] section
+            cat > "$CONFIG_FILE" << EOF
+# Bit-block Security-Hardened Configuration
+# Migrated on $(date)
+
+# Network settings
+regtest=1
+server=1
+listen=0
+dnsseed=0
+upnp=0
+natpmp=0
+
+# RPC Security
+rpcuser=$RPC_USER
+rpcpassword=$RPC_PASSWORD
+rpcallowip=127.0.0.1
+rpcserialversion=1
+
+# Performance and limits
+maxconnections=8
+maxuploadtarget=100
+
+# Logging
+printtoconsole=1
+shrinkdebugfile=1
+
+# Fees
+fallbackfee=0.001
+
+# Transaction policy
+datacarriersize=0
+rejecttokens=1
+rejectparasites=1
+
+# Security
+disablewallet=0
+
+# Regtest-specific configuration
+[regtest]
+rpcbind=127.0.0.1
+whitelist=127.0.0.1
+EOF
+            
+            chmod 600 "$CONFIG_FILE"
+            
+            # Update credentials file
+            echo "RPC_USER=$RPC_USER" > "$DATADIR/.rpc_credentials"
+            echo "RPC_PASSWORD=$RPC_PASSWORD" >> "$DATADIR/.rpc_credentials"
+            chmod 600 "$DATADIR/.rpc_credentials"
+            
+            log "✓ Configuration migrated with proper [regtest] section"
+        else
+            log "✓ Configuration already has proper [regtest] section"
+        fi
+        
         # Ensure transaction policy settings are present in existing config
         if ! grep -q "^datacarriersize=0$" "$CONFIG_FILE"; then
             log "Adding datacarriersize=0 to existing configuration..."
-            echo "" >> "$CONFIG_FILE"
-            echo "# Transaction policy (added by secure startup)" >> "$CONFIG_FILE"
-            echo "datacarriersize=0" >> "$CONFIG_FILE"
+            sed -i '/^\[regtest\]/i datacarriersize=0' "$CONFIG_FILE"
         fi
         if ! grep -q "^rejecttokens=1$" "$CONFIG_FILE"; then
             log "Adding rejecttokens=1 to existing configuration..."
-            echo "rejecttokens=1" >> "$CONFIG_FILE"
+            sed -i '/^\[regtest\]/i rejecttokens=1' "$CONFIG_FILE"
         fi
         if ! grep -q "^rejectparasites=1$" "$CONFIG_FILE"; then
             log "Adding rejectparasites=1 to existing configuration..."
-            echo "rejectparasites=1" >> "$CONFIG_FILE"
+            sed -i '/^\[regtest\]/i rejectparasites=1' "$CONFIG_FILE"
         fi
     fi
 }
@@ -142,11 +235,26 @@ verify_security() {
         log "WARNING: Config file permissions not secure"
     fi
     
-    # Verify RPC binding is restricted
-    if grep -q "rpcbind=127.0.0.1" "$CONFIG_FILE" && grep -q "rpcallowip=127.0.0.1" "$CONFIG_FILE"; then
-        log "✓ RPC properly restricted to localhost"
+    # Verify RPC binding is properly scoped in [regtest] section
+    if sed -n '/^\[regtest\]/,$ p' "$CONFIG_FILE" | grep -q '^rpcbind=127\.0\.0\.1$'; then
+        log "✓ RPC bind properly restricted to localhost in [regtest] section"
     else
-        log "WARNING: RPC binding may not be secure"
+        log "ERROR: rpcbind=127.0.0.1 not found in [regtest] section"
+        exit 1
+    fi
+    
+    # Ensure no global rpcbind settings exist (should only be in [regtest])  
+    if sed -n '1,/^\[regtest\]/p' "$CONFIG_FILE" | head -n -1 | grep -q '^rpcbind='; then
+        log "ERROR: Found global rpcbind settings - these should only be in [regtest] section"
+        exit 1
+    else
+        log "✓ No global rpcbind settings found (correctly scoped)"
+    fi
+    
+    if grep -q "rpcallowip=127.0.0.1" "$CONFIG_FILE"; then
+        log "✓ RPC access properly restricted to localhost"
+    else
+        log "WARNING: RPC access restriction may not be secure"
     fi
     
     # Verify transaction policy settings are present
