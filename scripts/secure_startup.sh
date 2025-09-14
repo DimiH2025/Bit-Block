@@ -4,9 +4,7 @@ set -euo pipefail
 # Bit-block Security-Hardened Startup Script
 # This script provides secure deployment configuration
 
-# Generate secure RPC credentials if not already set
-DATADIR="/app/.bitcoin-regtest"
-CONFIG_FILE="$DATADIR/bitcoin.conf"
+# RPC user setting
 RPC_USER="${BITCOIN_RPC_USER:-bitblock}"
 
 log() {
@@ -72,6 +70,9 @@ shrinkdebugfile=1
 # Fees
 fallbackfee=0.001
 
+# Transaction policy
+datacarriersize=0
+
 # Security
 disablewallet=0
 EOF
@@ -95,6 +96,14 @@ EOF
             log "RPC User: $RPC_USER"
             log "RPC Password: [REDACTED]"
         fi
+        
+        # Ensure datacarriersize=0 is present in existing config
+        if ! grep -q "^datacarriersize=0$" "$CONFIG_FILE"; then
+            log "Adding datacarriersize=0 to existing configuration..."
+            echo "" >> "$CONFIG_FILE"
+            echo "# Transaction policy (added by secure startup)" >> "$CONFIG_FILE"
+            echo "datacarriersize=0" >> "$CONFIG_FILE"
+        fi
     fi
 }
 
@@ -117,6 +126,14 @@ verify_security() {
         log "WARNING: RPC binding may not be secure"
     fi
     
+    # Verify datacarriersize=0 is present
+    if grep -q "^datacarriersize=0$" "$CONFIG_FILE"; then
+        log "✓ datacarriersize=0 policy is active"
+    else
+        log "ERROR: datacarriersize=0 policy missing from configuration"
+        exit 1
+    fi
+    
     log "✓ Security verification completed"
 }
 
@@ -137,8 +154,17 @@ start_bitcoind() {
 main() {
     log "=== Bit-block Security-Hardened Startup ==="
     
+    # Ensure we're in the correct directory
+    ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+    cd "$ROOT_DIR"
+    
+    # Set data directory paths after establishing correct working directory
+    DATADIR="${BITCOIN_DATADIR:-$ROOT_DIR/.bitcoin-regtest}"
+    CONFIG_FILE="$DATADIR/bitcoin.conf"
+    log "Configuration will be created at: $DATADIR"
+    
     # Run the smoke test first to ensure binaries are available  
-    SCRIPT_DIR="$(dirname "$0")"
+    SCRIPT_DIR="$ROOT_DIR/scripts"
     if ! "$SCRIPT_DIR/smoke_bit-block.sh"; then
         log "ERROR: Bit-block smoke test failed"
         exit 1

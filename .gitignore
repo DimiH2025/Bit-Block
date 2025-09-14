@@ -150,3 +150,11 @@ dist/
 /guix-build-*
 
 /ci/scratch/
+
+# Bitcoin runtime directories and credentials (security)
+.bitcoin-regtest/
+.bitcoin-testnet/
+.bitcoin-mainnet/
+.bitcoin/
+*.conf
+.rpc_credentials

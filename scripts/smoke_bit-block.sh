@@ -212,7 +212,8 @@ main() {
     
     # Test 1: Help command
     echo "1. Testing bitcoind help:"
-    "$BIN_DIR/bitcoind" -h | head -10
+    "$BIN_DIR/bitcoind" -h > /tmp/bitcoind_help.txt || true
+    head -10 /tmp/bitcoind_help.txt
     echo ""
     
     # Test 2: Version info
