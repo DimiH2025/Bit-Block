@@ -1,10 +1,11 @@
 modules = ["bash", "nodejs-20", "python-3.11", "cpp-clang14"]
 [agent]
 expertMode = true
+integrations = ["github:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["unzip", "cmake", "pkgconf", "sqlite", "boost", "libevent", "patch", "curl", "gnupg", "gnutar"]
+packages = ["boost", "cmake", "curl", "gnupg", "gnutar", "libevent", "patch", "pkgconf", "sqlite", "unzip"]
 
 [workflows]
 runButton = "Project"
