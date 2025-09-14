@@ -1,13 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="1in" height="1in" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<!-- Designers: Kurtis Stirling, Blissmode, Skyler, and Steven Hay
-     License: MIT
--->
-<g id="icon">
-	<circle cx="512" cy="512" r="495" fill="#F7931A" stroke="#D27A0F" stroke-width="34"/>
-	<g>
-		<use xlink:href="bitcoinknots-logo.svg#logo" />
-	</g>
+<svg width="500px" height="500px" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Bit-Block Logo - Simplified version for Bitcoin SVG -->
+<g id="bit-block-simple">
+  <!-- Fish body -->
+  <ellipse cx="250" cy="180" rx="120" ry="40" fill="#e8e8e8" stroke="#2c3e50" stroke-width="2"/>
+  
+  <!-- Fish head -->
+  <ellipse cx="150" cy="180" rx="30" ry="35" fill="#e8e8e8" stroke="#2c3e50" stroke-width="2"/>
+  
+  <!-- Fish eye -->
+  <circle cx="140" cy="175" r="5" fill="#2c3e50"/>
+  
+  <!-- Fish tail -->
+  <path d="M370 180 L410 155 L405 180 L410 205 Z" fill="#e8e8e8" stroke="#2c3e50" stroke-width="2"/>
+  
+  <!-- Bitcoin symbol -->
+  <circle cx="220" cy="150" r="12" fill="#f7931a"/>
+  <text x="220" y="156" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">₿</text>
+  
+  <!-- Text -->
+  <text x="200" y="195" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2c3e50">Bit-Block</text>
+  
+  <!-- Anchor -->
+  <g transform="translate(250, 280)">
+    <!-- Anchor ring -->
+    <circle cx="0" cy="-20" r="10" fill="none" stroke="#2c3e50" stroke-width="3"/>
+    
+    <!-- Anchor shaft -->
+    <line x1="0" y1="-10" x2="0" y2="50" stroke="#2c3e50" stroke-width="4"/>
+    
+    <!-- Anchor arms -->
+    <path d="M-15 40 Q-20 45 -15 50 L0 40 L15 50 Q20 45 15 40" fill="#2c3e50"/>
+    
+    <!-- Anchor flukes -->
+    <path d="M-15 40 L-25 35 L-20 45 Z" fill="#2c3e50"/>
+    <path d="M15 40 L25 35 L20 45 Z" fill="#2c3e50"/>
+  </g>
+  
+  <!-- Connection chain -->
+  <path d="M250 220 Q245 230 250 240 Q255 250 250 260" 
+        fill="none" stroke="#2c3e50" stroke-width="2"/>
 </g>
 </svg>
