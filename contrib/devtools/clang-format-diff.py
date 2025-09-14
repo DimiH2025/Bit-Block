@@ -25,11 +25,35 @@ from __future__ import absolute_import, division, print_function
 
 import argparse
 import difflib
+import os
 import re
+import shlex
 import subprocess
 import sys
 
 from io import StringIO
+
+
+def validate_binary_path(binary_path):
+    """Validate that the binary path is safe to execute."""
+    # Ensure it's just a binary name or absolute path to clang-format
+    if os.path.basename(binary_path).startswith('clang-format'):
+        return True
+    # Allow absolute paths that end with clang-format
+    if os.path.isabs(binary_path) and binary_path.endswith('clang-format'):
+        return True
+    return False
+
+
+def sanitize_filename(filename):
+    """Sanitize filename to prevent path traversal attacks."""
+    # Remove any path traversal attempts
+    filename = filename.replace('..', '')
+    # Ensure it's a relative path within current directory
+    filename = os.path.normpath(filename)
+    if filename.startswith('/') or filename.startswith('..'):
+        raise ValueError(f"Invalid filename: {filename}")
+    return filename
 
 
 def main():
@@ -95,13 +119,30 @@ def main():
     )
     args = parser.parse_args()
 
+    # Validate binary path for security
+    if not validate_binary_path(args.binary):
+        raise ValueError(f"Invalid binary path: {args.binary}")
+
+    # Validate style arguments
+    valid_styles = {'LLVM', 'GNU', 'Google', 'Chromium', 'Microsoft', 'Mozilla', 'WebKit', 'file'}
+    if args.style and args.style not in valid_styles:
+        # Allow file paths for custom styles, but escape them
+        args.style = shlex.quote(args.style)
+    if args.fallback_style and args.fallback_style not in valid_styles:
+        args.fallback_style = shlex.quote(args.fallback_style)
+
     # Extract changed lines for each file.
     filename = None
     lines_by_file = {}
     for line in sys.stdin:
         match = re.search(r"^\+\+\+\ (.*?/){%s}(\S*)" % args.p, line)
         if match:
-            filename = match.group(2)
+            try:
+                filename = sanitize_filename(match.group(2))
+            except ValueError as e:
+                print(f"Warning: Skipping invalid filename: {e}", file=sys.stderr)
+                filename = None
+                continue
         if filename is None:
             continue
 
