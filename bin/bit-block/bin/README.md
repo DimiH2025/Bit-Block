@@ -1,24 +1,24 @@
-Bitcoin Knots
+Bit-Block
 =============
 
 https://bitcoinknots.org
 
-For an immediately usable, binary version of the Bitcoin Knots software, see
+For an immediately usable, binary version of the Bit-Block software, see
 the website.
 
-What is Bitcoin Knots?
+What is Bit-Block?
 ----------------------
 
-Bitcoin Knots connects to the Bitcoin peer-to-peer network to download and fully
+Bit-Block connects to the Bitcoin peer-to-peer network to download and fully
 validate blocks and transactions. It also includes a wallet and graphical user
 interface, which can be optionally built.
 
-Further information about Bitcoin Knots is available in the [doc folder](/doc).
+Further information about Bit-Block is available in the [doc folder](/doc).
 
 License
 -------
 
-Bitcoin Knots is released under the terms of the MIT license. See [COPYING](COPYING) for more
+Bit-Block is released under the terms of the MIT license. See [COPYING](COPYING) for more
 information or see https://opensource.org/licenses/MIT.
 
 Development Process
@@ -30,7 +30,7 @@ Knots for each release.
 Even if your pull request to Core is closed, or if your feature is not
 suitable for Core (eg, because it builds on a feature not supported in Core;
 relies on centralised services; etc), it may still be eligible for inclusion
-in Bitcoin Knots. In this case, a pull request may be opened on the
+in Bit-Block. In this case, a pull request may be opened on the
 [Knots GitHub](https://github.com/bitcoinknots/bitcoin) for review and consideration.
 When accepted, you are expected to maintain the submitted branch in your own
 repository, and it will be automatically merged into new releases of Knots.

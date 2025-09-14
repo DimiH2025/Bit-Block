@@ -1,4 +1,4 @@
-Bitcoin Knots version 29.1.knots20250903 is now available from:
+Bit-Block version 29.1.knots20250903 is now available from:
 
   <https://bitcoinknots.org/files/29.x/29.1.knots20250903/>
 
@@ -23,13 +23,13 @@ or `bitcoind`/`bitcoin-qt` (on Linux).
 
 Upgrading directly from very old versions of Bitcoin Core or Knots is possible,
 but it might take some time if the data directory needs to be migrated. Old
-wallet versions of Bitcoin Knots are generally supported.
+wallet versions of Bit-Block are generally supported.
 
 Compatibility
 ==============
 
-Bitcoin Knots is supported on operating systems using the Linux kernel, macOS
-13+, and Windows 10+. It is not recommended to use Bitcoin Knots on
+Bit-Block is supported on operating systems using the Linux kernel, macOS
+13+, and Windows 10+. It is not recommended to use Bit-Block on
 unsupported systems.
 
 Known Bugs
@@ -43,7 +43,7 @@ This could result in reporting a lower virtual size than is actually used for
 mempool or mining purposes.
 
 Due to disruption of the shared Bitcoin Transifex repository, this release
-still does not include updated translations, and Bitcoin Knots may be unable
+still does not include updated translations, and Bit-Block may be unable
 to do so until/unless that is resolved.
 
 Notable changes
@@ -89,7 +89,7 @@ Notable changes
   allows for smart contracts such as Lightning where neither party can
   unilaterally increase the transaction fee, yet using an anchor can create
   a followup adding the necessary fee. (#30239)
-  By default, these anchors are accepted by Bitcoin Knots if and only if they
+  By default, these anchors are accepted by Bit-Block if and only if they
   are minimal size and zero value. If you want a more flexible policy
   (allowing for dummy sends and/or dust amounts), or wish to reject these new
   anchors entirely, you can use the new `-permitephemeral` option.
@@ -125,7 +125,7 @@ Notable changes
 
 - Several policy filters exist to make future protocol changes safer,
   collectively classified as "non-mandatory-script-verify-flag" rejections.
-  Unlike other policies, previous versions of Bitcoin Knots did not allow
+  Unlike other policies, previous versions of Bit-Block did not allow
   disabling these filters. However, this makes recovery difficult when people
   accidentally lock their bitcoins behind filtered "upgradable opcodes", and
   to accomidate recovery, this version of Knots allows specifying these
@@ -144,7 +144,7 @@ Notable changes
   amounts in the GUI.
 
 - The embedded "Roboto Mono Bold" font has been replaced with a new
-  "OCR-Bitcoin" font created specifically for Bitcoin Knots.
+  "OCR-Bitcoin" font created specifically for Bit-Block.
 
 - Qt 6.2+ is now supported as an alternative to Qt 5.15 (which remains the
   default for precompiled releases). As the Qt project no longer supports
@@ -269,7 +269,7 @@ Changes to wallet-related RPCs can be found in the Wallet section below.
 
 - Handling of negated `-noseednode`, `-nobind`, `-nowhitebind`, `-norpcbind`, `-norpcallowip`, `-norpcwhitelist`, `-notest`, `-noasmap`, `-norpcwallet`, `-noonlynet`, and `-noexternalip` options has changed. Previously negating these options had various confusing and undocumented side effects. Now negating them just resets the settings and restores default behaviors, as if the options were not specified.
 
-- As a safety check, Bitcoin Knots will **fail to start** when `-blockreservedweight` init parameter value is lower than `2000` weight units. Bitcoin Knots will also **fail to start** if the `-blockmaxweight` or `-blockreservedweight` init parameter exceeds consensus limit of `4,000,000 WU`.
+- As a safety check, Bit-Block will **fail to start** when `-blockreservedweight` init parameter value is lower than `2000` weight units. Bit-Block will also **fail to start** if the `-blockmaxweight` or `-blockreservedweight` init parameter exceeds consensus limit of `4,000,000 WU`.
 
 - Passing `-debug=0` or `-debug=none` now behaves like `-nodebug`: previously set debug categories will be cleared, but subsequent `-debug` options will still be applied.
 
@@ -289,7 +289,7 @@ The build system has been migrated from Autotools to CMake:
 1. The minimum required CMake version is 3.22.
 2. In-source builds are not allowed. When using a subdirectory within the root source tree as a build directory, it is recommended that its name includes the substring "build".
 3. CMake variables may be used to configure the build system. See [Autotools to CMake Options Mapping](https://github.com/bitcoinknots/bitcoin-devwiki/wiki/Autotools-to-CMake-Options-Mapping) for details.
-4. For single-configuration generators, the default build configuration (`CMAKE_BUILD_TYPE`) is "RelWithDebInfo". However, for the "Release" configuration, CMake defaults to the compiler optimization flag `-O3`, which has not been extensively tested with Bitcoin Knots. Therefore, the build system replaces it with `-O2`.
+4. For single-configuration generators, the default build configuration (`CMAKE_BUILD_TYPE`) is "RelWithDebInfo". However, for the "Release" configuration, CMake defaults to the compiler optimization flag `-O3`, which has not been extensively tested with Bit-Block. Therefore, the build system replaces it with `-O2`.
 5. By default, the built executables and libraries are located in the `bin/` and `lib/` subdirectories of the build directory.
 6. The build system supports component‐based installation. The names of the installable components coincide with the build target names. For example:
 ```
@@ -304,11 +304,11 @@ For more detailed guidance on configuring and using CMake, please refer to the o
 
 ### Software Expiration
 
-Since v0.14.2.knots20170618, each new version of Bitcoin Knots by default
+Since v0.14.2.knots20170618, each new version of Bit-Block by default
 expires 1-2 years after its release (during November). This is a security
 precaution to help ensure nodes remain kept up to date.
 
-New in this version, Bitcoin Knots will provide a warning 4 weeks prior to
+New in this version, Bit-Block will provide a warning 4 weeks prior to
 expiry and send an alert (see `-alertnotify`). When the expiry is reached,
 the warning will be updated and another alert sent. Mining will also be
 disabled at that time.

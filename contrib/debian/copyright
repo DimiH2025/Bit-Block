@@ -1,5 +1,5 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Bitcoin Knots
+Upstream-Name: Bit-Block
 Upstream-Contact: Luke Dashjr <luke+knots+debian@dashjr.org>
 Source: https://github.com/bitcoinknots/bitcoin
 

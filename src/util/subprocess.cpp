@@ -1,4 +1,4 @@
-// Copyright (c) 2025-present The Bitcoin Knots developers
+// Copyright (c) 2025-present The Bit-Block developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 

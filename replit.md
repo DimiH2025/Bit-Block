@@ -1,6 +1,6 @@
 # Overview
 
-Bitcoin Knots is a variant of Bitcoin Core that provides enhanced features and capabilities while maintaining compatibility with the Bitcoin network. This repository contains the complete Bitcoin node implementation including the core daemon (bitcoind), command-line utilities, and GUI client (bitcoin-qt). The project is built using CMake and supports cross-platform development across Windows, macOS, and various Unix-like systems.
+Bit-Block is a variant of Bitcoin Core that provides enhanced features and capabilities while maintaining compatibility with the Bitcoin network. This repository contains the complete Bitcoin node implementation including the core daemon (bitcoind), command-line utilities, and GUI client (bitcoin-qt). The project is built using CMake and supports cross-platform development across Windows, macOS, and various Unix-like systems.
 
 # User Preferences
 

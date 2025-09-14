@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-See our website for versions of Bitcoin Knots that are currently supported with
+See our website for versions of Bit-Block that are currently supported with
 security updates: https://bitcoinknots.org/
 
 ## Reporting a Vulnerability
