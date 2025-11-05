@@ -48,3 +48,7 @@ outputType = "console"
 [deployment]
 deploymentTarget = "vm"
 run = ["bash", "scripts/secure_startup.sh"]
+
+[[ports]]
+localPort = 18444
+externalPort = 80
