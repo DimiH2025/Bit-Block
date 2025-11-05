@@ -5,7 +5,7 @@ integrations = ["github:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["boost", "cmake", "curl", "gnupg", "gnutar", "libevent", "patch", "pkgconf", "sqlite", "unzip"]
+packages = ["boost", "cmake", "curl", "gnupg", "gnutar", "libevent", "patch", "pkgconf", "sqlite", "unzip", "pkg-config", "gcc"]
 
 [workflows]
 runButton = "Project"
