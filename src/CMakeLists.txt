@@ -228,6 +228,7 @@ add_library(bitcoin_node STATIC EXCLUDE_FROM_ALL
   addrman.cpp
   banman.cpp
   bip324.cpp
+  bip39/bip39.cpp
   blockencodings.cpp
   blockfilter.cpp
   consensus/tx_verify.cpp
@@ -296,6 +297,7 @@ add_library(bitcoin_node STATIC EXCLUDE_FROM_ALL
   rpc/fees.cpp
   rpc/mempool.cpp
   rpc/mining.cpp
+  rpc/mnemonic.cpp
   rpc/net.cpp
   rpc/node.cpp
   rpc/output_script.cpp
