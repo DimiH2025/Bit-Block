@@ -1,10 +1,14 @@
 Bit-block
 =============
 
-https://bitcoinknots.org
+https://bitblockorg.wpcomstaging.com/bit-block-bitcoin-development/
 
 For an immediately usable, binary version of the Bit-block software, see
-the website.
+the website. 
+
+--> binary version is currently being compiled. 
+
+--> code base is freely available for auditing
 
 What is Bit-block?
 ----------------------
