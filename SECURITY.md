@@ -3,7 +3,7 @@
 ## Supported Versions
 
 See our website for versions of Bit-Block that are currently supported with
-security updates: https://bitblockorg.wpcomstaging.com/bit-block-bitcoin-development/
+security updates: https://bit-block.org/bit-block-bitcoin-development/
 
 ## Reporting a Vulnerability
 
