@@ -3,16 +3,11 @@
 ## Supported Versions
 
 See our website for versions of Bit-Block that are currently supported with
-security updates: https://bitcoinknots.org/
+security updates: https://bitblockorg.wpcomstaging.com/bit-block-bitcoin-development/
 
 ## Reporting a Vulnerability
 
-To report security issues send an email to luke+security+knots@dashjr.org (not for support).
+To report security issues feel free to reach out through social media: 
+- X: https://x.com/Dimi_h 
+- LinkedIn: https://www.linkedin.com/in/dimitrihellemond/ 
 
-The following OpenPGP key should be used to communicate sensitive information:
-
-| Name | Fingerprint |
-|------|-------------|
-| Luke Dashjr | FAC0 98FE 8DF9 975F 9024  1881 3666 E2B1 782A 18E1 |
-
-You can import a key by running the following command with that individual’s fingerprint: `gpg --keyserver hkps://keys.openpgp.org --recv-keys "<fingerprint>"` Ensure that you put quotes around fingerprints containing spaces.
