@@ -289,7 +289,7 @@ main() {
     echo ""
     
     echo "✓ All Bit-block smoke tests passed!"
-    echo "Bit-block is working correctly in Replit environment"
+    echo "Bit-block is working correctly"
     echo "✓ Cryptographic verification completed - binaries are authentic"
 }
 

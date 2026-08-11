@@ -9,6 +9,7 @@
 #include <sync.h>
 #include <tinyformat.h>
 #include <util/threadnames.h>
+#include <util/threadpriority.h>
 
 #include <algorithm>
 #include <iterator>
@@ -141,14 +142,20 @@ public:
     Mutex m_control_mutex;
 
     //! Create a new check queue
-    explicit CCheckQueue(unsigned int batch_size, int worker_threads_num)
+    //! `raise_priority` mirrors libbitcoin-blockchain's `blockchain.priority`
+    //! setting: when set, worker threads ask the OS scheduler to favor them,
+    //! which can shorten Initial Block Download by reducing preemption of
+    //! validation work. It is best-effort and safe to leave on by default,
+    //! controlled by the `-parpriority` startup option.
+    explicit CCheckQueue(unsigned int batch_size, int worker_threads_num, bool raise_priority = true)
         : nBatchSize(batch_size)
     {
         LogInfo("Script verification uses %d additional threads", worker_threads_num);
         m_worker_threads.reserve(worker_threads_num);
         for (int n = 0; n < worker_threads_num; ++n) {
-            m_worker_threads.emplace_back([this, n]() {
+            m_worker_threads.emplace_back([this, n, raise_priority]() {
                 util::ThreadRename(strprintf("scriptch.%i", n));
+                if (raise_priority) util::RaiseValidationThreadPriority();
                 Loop(false /* worker thread */);
             });
         }

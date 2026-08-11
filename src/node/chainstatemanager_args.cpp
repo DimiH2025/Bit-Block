@@ -47,6 +47,33 @@ util::Result<void> ApplyArgsManOptions(const ArgsManager& args, ChainstateManage
         }
     }
 
+    // -ibdsyncmode: an explicit, opt-in choice between "verify everything
+    // from genesis" and a libbitcoin-milestone-style "trust the assumevalid
+    // checkpoint" fast path. Leaving it unset preserves today's default
+    // -assumevalid behavior unchanged.
+    if (auto value{args.GetArg("-ibdsyncmode")}) {
+        if (*value == "verify") {
+            opts.assumed_valid_block = uint256{};
+            LogInfo("ibdsyncmode=verify: full script verification from genesis is enabled; -assumevalid checkpoint disabled.");
+        } else if (*value == "trust") {
+            const bool has_checkpoint = opts.assumed_valid_block.has_value() && !opts.assumed_valid_block->IsNull();
+            if (has_checkpoint) {
+                LogWarning("ibdsyncmode=trust: skipping script verification for blocks at or below the "
+                           "assumevalid checkpoint (%s). This is ONLY safe if you, or software you "
+                           "trust, already independently verified the chain up to that block. If you "
+                           "have not, use -ibdsyncmode=verify (or -assumevalid=0) to verify every "
+                           "script back to genesis instead.", opts.assumed_valid_block->GetHex());
+            } else {
+                LogWarning("ibdsyncmode=trust was set, but there is no assumevalid checkpoint configured "
+                           "for this chain, so full verification from genesis will occur anyway.");
+            }
+        } else {
+            return util::Error{Untranslated(strprintf("Invalid -ibdsyncmode value (%s), must be 'verify' or 'trust'", *value))};
+        }
+    }
+
+    if (auto value{args.GetBoolArg("-parpriority")}) opts.raise_validation_thread_priority = *value;
+
     if (auto value{args.GetIntArg("-maxtipage")}) opts.max_tip_age = std::chrono::seconds{*value};
 
     ReadDatabaseArgs(args, opts.coins_db);

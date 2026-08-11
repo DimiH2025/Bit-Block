@@ -29,6 +29,7 @@ add_library(bitcoin_util STATIC EXCLUDE_FROM_ALL
   thread.cpp
   threadinterrupt.cpp
   threadnames.cpp
+  threadpriority.cpp
   time.cpp
   tokenpipe.cpp
   ../logging.cpp
