@@ -1,7 +1,7 @@
 Bit-block
 =============
 
-https://bitblockorg.wpcomstaging.com/bit-block-bitcoin-development/
+https://bit-block.org/bit-block-bitcoin-development/
 
 For an immediately usable, binary version of the Bit-block software, see
 the website. 
