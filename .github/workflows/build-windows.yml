@@ -30,7 +30,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install build dependencies
+      - - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -39,6 +39,20 @@ jobs:
             g++-mingw-w64-x86-64-posix \
             librsvg2-bin imagemagick \
             nsis
+          # Ubuntu's default ImageMagick policy.xml imposes width/height/area/
+          # memory resource limits that are too tight for .ico generation from
+          # multi-resolution PNGs (a known ImageMagick/Ubuntu packaging quirk,
+          # unrelated to this project's code). Relax them.
+          for f in /etc/ImageMagick-6/policy.xml /etc/ImageMagick-7/policy.xml; do
+            if [ -f "$f" ]; then
+              sudo sed -i \
+                -e 's/name="width" value="[0-9]*[A-Za-z]*"/name="width" value="128KP"/' \
+                -e 's/name="height" value="[0-9]*[A-Za-z]*"/name="height" value="128KP"/' \
+                -e 's/name="area" value="[0-9.]*[A-Za-z]*"/name="area" value="1GB"/' \
+                -e 's/name="memory" value="[0-9]*[A-Za-z]*"/name="memory" value="1GiB"/' \
+                "$f"
+            fi
+          done
 
       # depends/ compiles Boost, libevent, Qt, SQLite, etc. from source for
       # the mingw-w64 target. This is by far the slowest step.
