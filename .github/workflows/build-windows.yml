@@ -37,6 +37,7 @@ jobs:
             cmake curl make patch \
             bison g++ pkgconf python3 xz-utils \
             g++-mingw-w64-x86-64-posix \
+            librsvg2-bin imagemagick \
             nsis
 
       # depends/ compiles Boost, libevent, Qt, SQLite, etc. from source for
