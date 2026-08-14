@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
 
@@ -42,7 +42,7 @@ jobs:
       # depends/ compiles Boost, libevent, Qt, SQLite, etc. from source for
       # the mingw-w64 target. This is by far the slowest step.
       - name: Cache depends build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: depends/built
           key: depends-win64-${{ hashFiles('depends/packages/*.mk', 'depends/Makefile') }}
@@ -70,7 +70,7 @@ jobs:
           echo "exe_path=$exe_path" >> "$GITHUB_OUTPUT"
 
       - name: Upload installer as workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bit-block-win64-setup
           path: ${{ steps.find_exe.outputs.exe_path }}
@@ -79,4 +79,5 @@ jobs:
       # This build is NOT PGP-signed -- that requires your own private key,
       # which should never be stored in CI secrets or an Actions log. Sign
       # the downloaded artifact yourself, locally, if you want to publish it:
-      #   gpg --detach-sign --armor bit-block-*-win64-setup.exe
+      #   gpg --detach-sign --armor bit-block-*-win64-setup.exe Bump actions to Node 24 versions
+  
