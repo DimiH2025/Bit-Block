@@ -76,7 +76,20 @@ SplashScreen::SplashScreen(const NetworkStyle* networkStyle)
 
     // check font size and drawing with
     QStringList titleParts = titleText.split(' ');
-    assert(titleParts.size() == 2);
+if (titleParts.size() != 2) {
+    // CLIENT_NAME isn't necessarily two space-separated words (e.g. a
+    // single hyphenated brand name like "Bit-Block"). Fall back to
+    // splitting on the first hyphen, keeping the two-line "smaller word
+    // above / larger word below" layout the code below expects.
+    titleParts = titleText.split('-');
+}
+if (titleParts.size() != 2) {
+    // Still not exactly two parts (e.g. one plain word with neither a
+    // space nor a hyphen). Render the full name in both slots rather
+    // than crashing -- not pretty, but never fatal.
+    titleParts = QStringList{titleText, titleText};
+}
+assert(titleParts.size() == 2);
     pixPaint.setFont(QFont(font, 33*fontFactor));
     QFontMetrics fm = pixPaint.fontMetrics();
     int titleTextWidth = GUIUtil::TextWidth(fm, titleParts[0]);
