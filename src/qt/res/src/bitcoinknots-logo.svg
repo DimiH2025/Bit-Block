@@ -1,49 +1,176 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="1in" height="1in" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
-<!-- Bit-Block Logo - Custom design for the rebranded Bitcoin node software -->
-<g id="bit-block-logo">
-  <!-- Fish body -->
-  <ellipse cx="250" cy="180" rx="120" ry="40" fill="#f0f0f0" stroke="#2c3e50" stroke-width="3"/>
-  
-  <!-- Fish head -->
-  <ellipse cx="150" cy="180" rx="30" ry="35" fill="#f0f0f0" stroke="#2c3e50" stroke-width="3"/>
-  
-  <!-- Fish eye -->
-  <circle cx="140" cy="175" r="6" fill="#2c3e50"/>
-  
-  <!-- Fish tail -->
-  <path d="M370 180 L420 150 L410 180 L420 210 Z" fill="#f0f0f0" stroke="#2c3e50" stroke-width="3"/>
-  
-  <!-- Fish fins -->
-  <path d="M200 220 L180 240 L210 235 Z" fill="#f0f0f0" stroke="#2c3e50" stroke-width="3"/>
-  <path d="M300 220 L320 240 L290 235 Z" fill="#f0f0f0" stroke="#2c3e50" stroke-width="3"/>
-  
-  <!-- "Bit-Block" text -->
-  <text x="200" y="195" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#2c3e50">Bit-Block</text>
-  
-  <!-- Bitcoin symbol on fish -->
-  <circle cx="220" cy="150" r="15" fill="#f7931a"/>
-  <text x="220" y="158" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">₿</text>
-  
-  <!-- Anchor -->
-  <g transform="translate(250, 250)">
-    <!-- Anchor ring -->
-    <circle cx="0" cy="-30" r="15" fill="none" stroke="#2c3e50" stroke-width="4"/>
-    
-    <!-- Anchor shaft -->
-    <line x1="0" y1="-15" x2="0" y2="80" stroke="#2c3e50" stroke-width="6"/>
-    
-    <!-- Anchor arms -->
-    <path d="M-25 60 Q-30 70 -20 75 L0 60 L20 75 Q30 70 25 60" fill="#2c3e50"/>
-    
-    <!-- Anchor flukes -->
-    <path d="M-25 60 L-40 50 L-35 65 Z" fill="#2c3e50"/>
-    <path d="M25 60 L40 50 L35 65 Z" fill="#2c3e50"/>
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1in" height="1in" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="logo">
+  <g id="patch_1">
+   <path d="M 0 360 
+L 360 360 
+L 360 0 
+L 0 0 
+L 0 360 
+z
+" style="fill: none"/>
   </g>
-  
-  <!-- Anchor chain -->
-  <path d="M250 220 Q240 230 250 240 Q260 250 250 260 Q240 270 250 280" 
-        fill="none" stroke="#2c3e50" stroke-width="3"/>
-</g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 60.48 14.4 
+L 299.52 14.4 
+Q 345.6 14.4 345.6 60.48 
+L 345.6 299.52 
+Q 345.6 345.6 299.52 345.6 
+L 60.48 345.6 
+Q 14.4 345.6 14.4 299.52 
+L 14.4 60.48 
+Q 14.4 14.4 60.48 14.4 
+z
+" clip-path="url(#p88d262c091)" style="fill: #f7931a"/>
+   </g>
+   <g id="text_1">
+    <!-- BIT -->
+    <g style="fill: #ffffff" transform="translate(96.445312 176.58625) scale(0.92 -0.92)">
+     <defs>
+      <path id="DejaVuSans-Bold-42" d="M 2456 2859 
+Q 2741 2859 2887 2984 
+Q 3034 3109 3034 3353 
+Q 3034 3594 2887 3720 
+Q 2741 3847 2456 3847 
+L 1791 3847 
+L 1791 2859 
+L 2456 2859 
+z
+M 2497 819 
+Q 2859 819 3042 972 
+Q 3225 1125 3225 1434 
+Q 3225 1738 3044 1889 
+Q 2863 2041 2497 2041 
+L 1791 2041 
+L 1791 819 
+L 2497 819 
+z
+M 3616 2497 
+Q 4003 2384 4215 2081 
+Q 4428 1778 4428 1338 
+Q 4428 663 3972 331 
+Q 3516 0 2584 0 
+L 588 0 
+L 588 4666 
+L 2394 4666 
+Q 3366 4666 3802 4372 
+Q 4238 4078 4238 3431 
+Q 4238 3091 4078 2852 
+Q 3919 2613 3616 2497 
+z
+" transform="scale(0.015625)"/>
+      <path id="DejaVuSans-Bold-49" d="M 588 4666 
+L 1791 4666 
+L 1791 0 
+L 588 0 
+L 588 4666 
+z
+" transform="scale(0.015625)"/>
+      <path id="DejaVuSans-Bold-54" d="M 31 4666 
+L 4331 4666 
+L 4331 3756 
+L 2784 3756 
+L 2784 0 
+L 1581 0 
+L 1581 3756 
+L 31 3756 
+L 31 4666 
+z
+" transform="scale(0.015625)"/>
+     </defs>
+     <use xlink:href="#DejaVuSans-Bold-42"/>
+     <use xlink:href="#DejaVuSans-Bold-49" transform="translate(76.220703 0)"/>
+     <use xlink:href="#DejaVuSans-Bold-54" transform="translate(113.427734 0)"/>
+    </g>
+   </g>
+   <g id="text_2">
+    <!-- BLOCK -->
+    <g style="fill: #ffffff" transform="translate(53.450937 238.36375) scale(0.68 -0.68)">
+     <defs>
+      <path id="DejaVuSans-Bold-4c" d="M 588 4666 
+L 1791 4666 
+L 1791 909 
+L 3903 909 
+L 3903 0 
+L 588 0 
+L 588 4666 
+z
+" transform="scale(0.015625)"/>
+      <path id="DejaVuSans-Bold-4f" d="M 2719 3878 
+Q 2169 3878 1866 3472 
+Q 1563 3066 1563 2328 
+Q 1563 1594 1866 1187 
+Q 2169 781 2719 781 
+Q 3272 781 3575 1187 
+Q 3878 1594 3878 2328 
+Q 3878 3066 3575 3472 
+Q 3272 3878 2719 3878 
+z
+M 2719 4750 
+Q 3844 4750 4481 4106 
+Q 5119 3463 5119 2328 
+Q 5119 1197 4481 553 
+Q 3844 -91 2719 -91 
+Q 1597 -91 958 553 
+Q 319 1197 319 2328 
+Q 319 3463 958 4106 
+Q 1597 4750 2719 4750 
+z
+" transform="scale(0.015625)"/>
+      <path id="DejaVuSans-Bold-43" d="M 4288 256 
+Q 3956 84 3597 -3 
+Q 3238 -91 2847 -91 
+Q 1681 -91 1000 561 
+Q 319 1213 319 2328 
+Q 319 3447 1000 4098 
+Q 1681 4750 2847 4750 
+Q 3238 4750 3597 4662 
+Q 3956 4575 4288 4403 
+L 4288 3438 
+Q 3953 3666 3628 3772 
+Q 3303 3878 2944 3878 
+Q 2300 3878 1931 3465 
+Q 1563 3053 1563 2328 
+Q 1563 1606 1931 1193 
+Q 2300 781 2944 781 
+Q 3303 781 3628 887 
+Q 3953 994 4288 1222 
+L 4288 256 
+z
+" transform="scale(0.015625)"/>
+      <path id="DejaVuSans-Bold-4b" d="M 588 4666 
+L 1791 4666 
+L 1791 2963 
+L 3525 4666 
+L 4922 4666 
+L 2675 2456 
+L 5153 0 
+L 3647 0 
+L 1791 1838 
+L 1791 0 
+L 588 0 
+L 588 4666 
+z
+" transform="scale(0.015625)"/>
+     </defs>
+     <use xlink:href="#DejaVuSans-Bold-42"/>
+     <use xlink:href="#DejaVuSans-Bold-4c" transform="translate(76.220703 0)"/>
+     <use xlink:href="#DejaVuSans-Bold-4f" transform="translate(136.316406 0)"/>
+     <use xlink:href="#DejaVuSans-Bold-43" transform="translate(221.326172 0)"/>
+     <use xlink:href="#DejaVuSans-Bold-4b" transform="translate(294.714844 0)"/>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p88d262c091">
+   <rect x="0" y="0" width="360" height="360"/>
+  </clipPath>
+ </defs>
 </svg>
