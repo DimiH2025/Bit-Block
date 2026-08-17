@@ -1,0 +1,81 @@
+name: Build Linux
+
+# Builds native Linux binaries (bitcoind, bitcoin-qt, bitcoin-cli, etc.) using
+# system packages directly, per doc/build-unix.md -- no depends/ cross-compile
+# toolchain needed, unlike the Windows installer build. Much faster.
+#
+# Trigger it manually from the Actions tab ("Run workflow"), or let it run
+# automatically on pushes to main. The finished binaries show up as a
+# downloadable "artifact" on the workflow run's summary page.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+concurrency:
+  group: build-linux-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake pkgconf python3 \
+            libevent-dev libboost-dev \
+            libsqlite3-dev \
+            libminiupnpc-dev \
+            libzmq3-dev \
+            systemtap-sdt-dev \
+            qtbase5-dev qttools5-dev qttools5-dev-tools \
+            librsvg2-bin imagemagick \
+            libqrencode-dev
+          # Same ImageMagick policy.xml relaxation as the Windows build --
+          # harmless if unneeded, prevents the same .ico-generation failure
+          # here too since GUI icon generation runs on any platform.
+          for f in /etc/ImageMagick-6/policy.xml /etc/ImageMagick-7/policy.xml; do
+            if [ -f "$f" ]; then
+              sudo sed -i \
+                -e 's/name="width" value="[0-9]*[A-Za-z]*"/name="width" value="128KP"/' \
+                -e 's/name="height" value="[0-9]*[A-Za-z]*"/name="height" value="128KP"/' \
+                -e 's/name="area" value="[0-9.]*[A-Za-z]*"/name="area" value="1GB"/' \
+                -e 's/name="memory" value="[0-9]*[A-Za-z]*"/name="memory" value="1GiB"/' \
+                "$f"
+            fi
+          done
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Package binaries into a tarball
+        run: |
+          version=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          staging="bit-block-${version}-x86_64-linux-gnu"
+          mkdir -p "$staging"
+          # Copy every built executable (bitcoind, bitcoin-qt, bitcoin-cli,
+          # bitcoin-tx, bitcoin-wallet, bitcoin-util, test_bitcoin, etc.)
+          find build/bin -maxdepth 1 -type f -executable -exec cp {} "$staging/" \;
+          cp README.md COPYING "$staging/" 2>/dev/null || true
+          tar -czf "${staging}.tar.gz" "$staging"
+          echo "TARBALL_PATH=${staging}.tar.gz" >> "$GITHUB_ENV"
+
+      - name: Upload binaries as workflow artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: bit-block-linux-x86_64
+          path: ${{ env.TARBALL_PATH }}
+          retention-days: 14
