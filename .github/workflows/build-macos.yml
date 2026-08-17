@@ -1,0 +1,85 @@
+name: Build macOS
+
+# Builds native macOS binaries for both Apple Silicon (arm64, via
+# macos-latest) and Intel (x86_64, via macos-15-intel) using Homebrew for
+# dependencies, per doc/build-osx.md. Runs directly on GitHub's macOS-hosted
+# runners -- real Apple hardware/VMs, so no cross-compile SDK extraction
+# step is needed (unlike cross-compiling macOS targets from Linux, which
+# requires an Apple SDK you'd have to supply yourself).
+#
+#
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+concurrency:
+  group: build-macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest    # Apple Silicon (arm64)
+            arch: arm64
+          - runner: macos-15-intel  # Intel (x86_64)
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          brew install cmake boost pkgconf libevent
+          brew install berkeley-db@4
+          brew install qt@5
+          brew install qrencode
+          brew install miniupnpc
+          brew install zeromq
+          brew install libicns librsvg
+
+      - name: Configure
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix qt@5)" \
+            -DWITH_BDB=ON \
+            -DBUILD_GUI=ON
+
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.ncpu)
+
+      - name: Package into Bit-Block.zip
+        run: cmake --build build --target deploy
+
+      - name: Locate packaged .zip
+        id: find_zip
+        run: |
+          zip_path=$(find build -maxdepth 1 -iname "*.zip" | head -n1)
+          if [ -z "$zip_path" ]; then
+            echo "No packaged .zip found under build/ -- see the 'Package into Bit-Block.zip' step's log above." >&2
+            exit 1
+          fi
+          echo "zip_path=$zip_path" >> "$GITHUB_OUTPUT"
+
+      - name: Upload as workflow artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: bit-block-macos-${{ matrix.arch }}
+          path: ${{ steps.find_zip.outputs.zip_path }}
+          retention-days: 14
+
+      # This build is NOT code-signed or notarized -- that requires an Apple
+      # Developer account and a signing certificate, neither of which
+      # belong in CI secrets by default. Without signing/notarization,
+      # macOS Gatekeeper will warn (or block) on first launch; right-click
+      # the app and choose "Open" to bypass this for local testing.
