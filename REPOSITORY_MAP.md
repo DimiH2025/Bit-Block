@@ -26,6 +26,9 @@ clone of this repository by 220 MB for no functional benefit, now that
 reproducible builds run in CI (see `.github/workflows/`). **Recommended:**
 remove this directory from version control and add `bin/` to `.gitignore`.
 
+Decided to not remove these binaries but leave the warning. 
+
+
 ---
 
 ## Top-level layout
