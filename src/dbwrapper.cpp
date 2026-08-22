@@ -292,7 +292,7 @@ CDBWrapper::CDBWrapper(const DBParams& params)
 
     if (params.options.force_compact) {
         LogPrintf("Starting database compaction of %s\n", fs::PathToString(params.path));
-        DBContext().pdb->CompactRange(nullptr, nullptr);
+        CompactFull();
         LogPrintf("Finished database compaction of %s\n", fs::PathToString(params.path));
     }
 
@@ -346,6 +346,8 @@ bool CDBWrapper::WriteBatch(CDBBatch& batch, bool fSync)
     }
     return true;
 }
+
+void CDBWrapper::CompactFull() { DBContext().pdb->CompactRange(nullptr, nullptr); }
 
 size_t CDBWrapper::DynamicMemoryUsage() const
 {
