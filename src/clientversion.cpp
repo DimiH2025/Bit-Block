@@ -58,7 +58,14 @@ static std::string FormatVersion(int nVersion)
 
 std::string FormatFullVersion()
 {
-    return CLIENT_BUILD;
+    // Bit-Block shows its own simple release counter ("V2", "V3", ...) here
+    // instead of the raw upstream Knots/Core version string, which was
+    // confusing users. The real underlying build (CLIENT_BUILD, e.g.
+    // "v29.1.0.knots20250903") is intentionally left untouched and still
+    // used for the P2P network version string in FormatSubVersion() below --
+    // it remains visible for support/debugging purposes via the
+    // "subversion" field in the getnetworkinfo RPC (or `bitcoin-cli -netinfo`).
+    return "V" BITBLOCK_RELEASE_VERSION;
 }
 
 /**
