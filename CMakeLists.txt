@@ -32,9 +32,17 @@ set(CLIENT_VERSION_MINOR 1)
 set(CLIENT_VERSION_BUILD 0)
 set(CLIENT_VERSION_RC 0)
 set(CLIENT_VERSION_IS_RELEASE "true")
-set(COPYRIGHT_YEAR "2025")
+set(COPYRIGHT_YEAR "2026")
 
-set(CLIENT_VERSION_SUFFIX ".knots20250903")
+# Bit-Block's own release counter, shown to users as "V<n>" in place of the
+# upstream Knots/Core version string (see FormatFullVersion() in
+# clientversion.cpp). Bump this by hand each time a new Bit-Block build is
+# compiled and released -- it is intentionally independent of
+# CLIENT_VERSION_MAJOR/MINOR/BUILD above, which track the upstream base this
+# fork was built from and remain accurate internally (network protocol
+# version string, RPC version fields, etc. are unaffected by this).
+set(BITBLOCK_RELEASE_VERSION "2")
+
 
 # During the enabling of the CXX and CXXOBJ languages, we modify
 # CMake's compiler/linker invocation strings by appending the content
