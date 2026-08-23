@@ -89,8 +89,6 @@ public:
     QString tabTitle(TabTypes tab_type) const;
     QKeySequence tabShortcut(TabTypes tab_type) const;
 
-    QLabel *m_label_softwareexpiry;
-
 protected:
     virtual bool eventFilter(QObject* obj, QEvent *event) override;
     void keyPressEvent(QKeyEvent *) override;
