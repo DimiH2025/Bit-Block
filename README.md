@@ -6,8 +6,8 @@ https://bit-block.org/bit-block-bitcoin-development/
 For an immediately usable, binary version of the Bit-block software, see
 the website. 
 
---> binary version is currently being compiled. 
-
+--> binary versions V1.0 are ready 
+--> binary versions V2.0 are ready
 --> code base is freely available for auditing
 
 What is Bit-block?
