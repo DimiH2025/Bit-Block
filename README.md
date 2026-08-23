@@ -7,7 +7,9 @@ For an immediately usable, binary version of the Bit-block software, see
 the website. 
 
 --> binary versions V1.0 are ready 
+
 --> binary versions V2.0 are ready
+
 --> code base is freely available for auditing
 
 What is Bit-block?
