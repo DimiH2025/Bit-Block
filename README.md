@@ -10,7 +10,7 @@ the website.
 
 --> binary versions V2.0 are ready
 
---> code base is freely available for auditing
+--> code base is freely available for auditing Repository walkthrough can be found here: https://github.com/DimiH2025/Bit-Block/blob/main/REPOSITORY_MAP.md 
 
 What is Bit-block?
 ----------------------
