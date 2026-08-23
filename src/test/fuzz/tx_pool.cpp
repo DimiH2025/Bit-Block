@@ -118,8 +118,7 @@ void Finish(FuzzedDataProvider& fuzzed_data_provider, MockedTxPool& tx_pool, Cha
 void MockTime(FuzzedDataProvider& fuzzed_data_provider, const Chainstate& chainstate)
 {
     const auto time = ConsumeTime(fuzzed_data_provider,
-                                  chainstate.m_chain.Tip()->GetMedianTimePast() + 1,
-                                  DEFAULT_SOFTWARE_EXPIRY - 1);
+                                  chainstate.m_chain.Tip()->GetMedianTimePast() + 1);
     SetMockTime(time);
 }
 
