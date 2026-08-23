@@ -26,9 +26,6 @@ clone of this repository by 220 MB for no functional benefit, now that
 reproducible builds run in CI (see `.github/workflows/`). **Recommended:**
 remove this directory from version control and add `bin/` to `.gitignore`.
 
-Decided to not remove these binaries but leave the warning. 
-
-
 ---
 
 ## Top-level layout
@@ -104,6 +101,9 @@ was forked from. Everything *not* listed here is inherited, shared code.
 | `src/qt/splashscreen.cpp` fix | The splash screen's title-rendering code assumed every product name is exactly two space-separated words (e.g. "Bitcoin Core"). Made it fall back to splitting on a hyphen for names like "Bit-Block", instead of crashing with a failed assertion. |
 | `src/qt/res/src/bitcoin.svg`, `bitcoinknots-logo.svg` | Rebranded application icon and installer/splash-screen artwork. Also fixes two real, pre-existing bugs uncovered while doing this: (1) the SVGs' declared physical size didn't match what the build's DPI-based icon-scaling math expected, breaking `.ico` generation entirely; (2) the installer header referenced a `#logo` element ID that didn't exist in the logo file, silently rendering nothing. |
 | `cmake/module/GenerateSetupNsi.cmake`, `Maintenance.cmake` | Installer output renamed from `bitcoin-win64-setup.exe` to `bit-block-win64-setup.exe`. (The `bitcoin:` URI protocol registration was deliberately left unchanged — it's the BIP-21 payment-link protocol identifier, not branding, and renaming it would break `bitcoin:` link handling.) |
+| `BITBLOCK_RELEASE_VERSION` (`CMakeLists.txt`, `cmake/bitcoin-build-config.h.in`, `src/clientversion.cpp`) | Bit-Block's own simple release counter ("V2", "V3", ...), shown everywhere a human-facing version string appears (splash screen, About dialog, `--version` output on every binary) in place of the confusing raw upstream string (e.g. `v29.1.0.knots20250903`). Bumped by hand at each release; independent of `CLIENT_VERSION_MAJOR`/`MINOR`/`BUILD`, which still track the real upstream base internally and are unaffected — the real technical version remains visible via the `subversion` field in the `getnetworkinfo` RPC for support/debugging purposes. |
+| `COPYRIGHT_YEAR` fix (`CMakeLists.txt`) | Was hardcoded to `2025`, shown incorrectly on the splash screen's copyright lines. This value isn't purely cosmetic in this codebase — see the next row. |
+| Advisory upgrade reminder (`src/clientversion.h`, `clientversion.cpp`, `src/init.cpp`, `src/kernel/warning.h`) | Bitcoin Knots inherited a "software expiry" mechanism from a Bitcoin Core PR (`#10282`) that was proposed and ultimately **closed/rejected upstream** — it refused to start the node, and refused to accept new blocks, roughly two years after `COPYRIGHT_YEAR`. Bit-Block replaced this with a purely advisory version: two years after `COPYRIGHT_YEAR`, a one-time, dismissible message suggests the user consider upgrading (shown as a friendly GUI popup, and as a warning visible via `getnetworkinfo`/`-getinfo` for headless `bitcoind` users). It does **not** affect startup, block validation, or mining in any way — following the suggestion of a reviewer on the original, rejected upstream PR: *"I'd be much happier if this just alarmed and warned the user rather than shutdown the node."* A `-upgradereminder=<timestamp>` debug flag exists for testing this without waiting two real years. |
 
 ---
 
