@@ -45,17 +45,23 @@ std::string CopyrightHolders(const std::string& strPrefix);
 /** Returns licensing information (for -version) */
 std::string LicenseInfo();
 
-static constexpr int64_t SECONDS_PER_WEEK = 604800;
 static constexpr int64_t SECONDS_PER_YEAR = 31558060;
-
 static constexpr int POSIX_EPOCH_YEAR = 1970;
-static constexpr int64_t DEFAULT_SOFTWARE_EXPIRY_OFFSET = 26784000;  // Around Nov 7
-static constexpr int64_t DEFAULT_SOFTWARE_EXPIRY = ((COPYRIGHT_YEAR - POSIX_EPOCH_YEAR) * SECONDS_PER_YEAR) + (SECONDS_PER_YEAR * 2) + DEFAULT_SOFTWARE_EXPIRY_OFFSET;
-extern int64_t g_software_expiry;
 
-static constexpr int64_t SOFTWARE_EXPIRY_WARN_PERIOD = SECONDS_PER_WEEK * 4;
-
-bool IsThisSoftwareExpired(int64_t nTime);
+// Two years after COPYRIGHT_YEAR, Bit-Block shows a one-time, dismissible
+// reminder suggesting the user consider upgrading to a newer build.
+//
+// This is intentionally advisory-only. An earlier version of this mechanism
+// (inherited from Bitcoin Knots, itself based on a Bitcoin Core PR -- #10282
+// -- that was proposed and ultimately closed/rejected upstream) additionally
+// refused to start, and refused to accept new blocks, once past this date.
+// Bit-Block does neither: reaching this date changes nothing about how the
+// node validates or runs, it only shows a message. This follows the
+// suggestion of a reviewer on that original, rejected PR: "I'd be much
+// happier if this just alarmed and warned the user rather than shutdown
+// the node."
+static constexpr int64_t DEFAULT_UPGRADE_REMINDER_TIME = ((COPYRIGHT_YEAR - POSIX_EPOCH_YEAR) * SECONDS_PER_YEAR) + (SECONDS_PER_YEAR * 2);
+extern int64_t g_upgrade_reminder_time;
 
 #endif // WINDRES_PREPROC
 

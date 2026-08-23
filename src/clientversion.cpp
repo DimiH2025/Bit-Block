@@ -117,12 +117,4 @@ std::string LicenseInfo()
            "\n";
 }
 
-int64_t g_software_expiry{DEFAULT_SOFTWARE_EXPIRY};
-
-bool IsThisSoftwareExpired(int64_t nTime)
-{
-    if (g_software_expiry <= 0) {
-        return false;
-    }
-    return (nTime > g_software_expiry);
-}
+int64_t g_upgrade_reminder_time{DEFAULT_UPGRADE_REMINDER_TIME};
