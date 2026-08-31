@@ -84,3 +84,20 @@ Translations are periodically pulled from Transifex and merged into the git repo
 
 **Important**: We do not accept translation changes as GitHub pull requests because the next
 pull from Transifex would automatically overwrite them again.
+
+
+Funding
+---------- 
+
+Bit-Block is not funded by any organization. 
+
+The committed work is entirely on a voluntary basis. 
+
+If you'd like to donate and support the work done, you can do so here:
+
+- BTC:
+<img width="226" height="232" alt="image" src="https://github.com/user-attachments/assets/a955bc78-ea13-4641-abe7-f7f5b82c9cf3" />
+
+- PayPal:
+<img width="253" height="254" alt="image" src="https://github.com/user-attachments/assets/5295709b-e1b8-4f97-a9a3-e6ca7845c332" />
+
