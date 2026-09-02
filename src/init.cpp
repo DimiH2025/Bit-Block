@@ -58,6 +58,7 @@
 #include <node/mempool_persist_args.h>
 #include <node/miner.h>
 #include <node/peerman_args.h>
+#include <policy/antispam.h>
 #include <policy/feerate.h>
 #include <policy/fees.h>
 #include <policy/fees_args.h>
@@ -740,6 +741,20 @@ void SetupServerArgs(ArgsManager& argsman, bool can_listen_ipc)
                    OptionsCategory::NODE_RELAY);
     argsman.AddArg("-permitbaremultisig", strprintf("Relay transactions creating non-P2SH multisig outputs (default: %u)", DEFAULT_PERMIT_BAREMULTISIG), ArgsManager::ALLOW_ANY,
                    OptionsCategory::NODE_RELAY);
+    argsman.AddArg("-antispamscriptpubkeysize", strprintf("Anti-spam policy (BIP-110 rule 1): reject relaying/mining transactions with a new non-OP_RETURN output script over %u bytes (default: %u)", ANTISPAM_MAX_SCRIPTPUBKEY_SIZE, true), ArgsManager::ALLOW_ANY,
+                   OptionsCategory::NODE_RELAY);
+    argsman.AddArg("-antispampushdatasize", strprintf("Anti-spam policy (BIP-110 rule 2): reject relaying/mining transactions with a scriptSig push or witness stack item over %u bytes, except a P2SH redeemScript push (default: %u)", ANTISPAM_MAX_PUSHDATA_SIZE, true), ArgsManager::ALLOW_ANY,
+                   OptionsCategory::NODE_RELAY);
+    argsman.AddArg("-antispamwitnessversion", strprintf("Anti-spam policy (BIP-110 rule 3): reject relaying/mining transactions spending an output with an undefined witness version (default: %u)", true), ArgsManager::ALLOW_ANY,
+                   OptionsCategory::NODE_RELAY);
+    argsman.AddArg("-antispamtaprootannex", strprintf("Anti-spam policy (BIP-110 rule 4): reject relaying/mining transactions whose witness stack contains a Taproot annex (default: %u)", true), ArgsManager::ALLOW_ANY,
+                   OptionsCategory::NODE_RELAY);
+    argsman.AddArg("-antispamcontrolblocksize", strprintf("Anti-spam policy (BIP-110 rule 5): reject relaying/mining transactions with a Taproot control block over %u bytes (default: %u)", ANTISPAM_MAX_CONTROL_BLOCK_SIZE, true), ArgsManager::ALLOW_ANY,
+                   OptionsCategory::NODE_RELAY);
+    argsman.AddArg("-antispamopsuccess", strprintf("Anti-spam policy (BIP-110 rule 6): reject relaying/mining transactions whose tapscript contains an OP_SUCCESS opcode, even in an untaken branch (default: %u)", true), ArgsManager::ALLOW_ANY,
+                   OptionsCategory::NODE_RELAY);
+    argsman.AddArg("-antispamtapscriptif", strprintf("Anti-spam policy (BIP-110 rule 7): reject relaying/mining transactions whose tapscript executes OP_IF or OP_NOTIF -- the envelope pattern used by Ordinals-style inscriptions (default: %u)", true), ArgsManager::ALLOW_ANY,
+                   OptionsCategory::NODE_RELAY);
     argsman.AddArg("-permitephemeral=<options>",
                    strprintf("Relay transaction packages that include ephemeral outputs defined by comma-separated options (prefix each by '-' to force off): \"anchor\" to allow minimal anyone-can-spend anchors, \"send\" to allow ordinary output types to be considered ephemeral, and \"dust\" to allow for dust-amount outputs rather than strictly zero-value (default: %s)", "anchor,-send,-dust"),
                    ArgsManager::ALLOW_ANY,
@@ -1195,6 +1210,14 @@ bool AppInitParameterInteraction(const ArgsManager& args)
     }
 
     g_script_size_policy_limit = args.GetIntArg("-maxscriptsize", g_script_size_policy_limit);
+
+    g_antispam_limit_scriptpubkey_size = args.GetBoolArg("-antispamscriptpubkeysize", g_antispam_limit_scriptpubkey_size);
+    g_antispam_limit_pushdata_size = args.GetBoolArg("-antispampushdatasize", g_antispam_limit_pushdata_size);
+    g_antispam_reject_undefined_witness_version = args.GetBoolArg("-antispamwitnessversion", g_antispam_reject_undefined_witness_version);
+    g_antispam_reject_taproot_annex = args.GetBoolArg("-antispamtaprootannex", g_antispam_reject_taproot_annex);
+    g_antispam_limit_control_block_size = args.GetBoolArg("-antispamcontrolblocksize", g_antispam_limit_control_block_size);
+    g_antispam_reject_op_success = args.GetBoolArg("-antispamopsuccess", g_antispam_reject_op_success);
+    g_antispam_reject_tapscript_if = args.GetBoolArg("-antispamtapscriptif", g_antispam_reject_tapscript_if);
 
     nBytesPerSigOp = args.GetIntArg("-bytespersigop", nBytesPerSigOp);
     nBytesPerSigOpStrict = args.GetIntArg("-bytespersigopstrict", nBytesPerSigOpStrict);
