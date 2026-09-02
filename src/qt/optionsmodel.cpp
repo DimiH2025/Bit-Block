@@ -91,6 +91,13 @@ static const char* SettingName(OptionsModel::OptionID option)
     case OptionsModel::rejectparasites: return "rejectparasites";
     case OptionsModel::rejecttokens: return "rejecttokens";
     case OptionsModel::rejectspkreuse: return "rejectspkreuse";
+    case OptionsModel::antispamscriptpubkeysize: return "antispamscriptpubkeysize";
+    case OptionsModel::antispampushdatasize: return "antispampushdatasize";
+    case OptionsModel::antispamwitnessversion: return "antispamwitnessversion";
+    case OptionsModel::antispamtaprootannex: return "antispamtaprootannex";
+    case OptionsModel::antispamcontrolblocksize: return "antispamcontrolblocksize";
+    case OptionsModel::antispamopsuccess: return "antispamopsuccess";
+    case OptionsModel::antispamtapscriptif: return "antispamtapscriptif";
     case OptionsModel::minrelaytxfee: return "minrelaytxfee";
     case OptionsModel::minrelaycoinblocks: return "minrelaycoinblocks";
     case OptionsModel::minrelaymaturity: return "minrelaymaturity";
@@ -422,6 +429,13 @@ bool OptionsModel::Init(bilingual_str& error)
     // Caution: This is before general initialisation occurs!
     f_peerbloomfilters = gArgs.GetBoolArg("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS);
     f_rejectspkreuse = !(gArgs.GetArg("-spkreuse", DEFAULT_SPKREUSE) == "allow" || gArgs.GetBoolArg("-spkreuse", false));
+    f_antispamscriptpubkeysize = gArgs.GetBoolArg("-antispamscriptpubkeysize", true);
+    f_antispampushdatasize = gArgs.GetBoolArg("-antispampushdatasize", true);
+    f_antispamwitnessversion = gArgs.GetBoolArg("-antispamwitnessversion", true);
+    f_antispamtaprootannex = gArgs.GetBoolArg("-antispamtaprootannex", true);
+    f_antispamcontrolblocksize = gArgs.GetBoolArg("-antispamcontrolblocksize", true);
+    f_antispamopsuccess = gArgs.GetBoolArg("-antispamopsuccess", true);
+    f_antispamtapscriptif = gArgs.GetBoolArg("-antispamtapscriptif", true);
 
     // Display
     if (settings.contains("FontForMoney")) {
@@ -731,6 +745,20 @@ QVariant OptionsModel::getOption(OptionID option, const std::string& suffix) con
         return node().mempool().m_opts.reject_tokens;
     case rejectspkreuse:
         return f_rejectspkreuse;
+    case antispamscriptpubkeysize:
+        return f_antispamscriptpubkeysize;
+    case antispampushdatasize:
+        return f_antispampushdatasize;
+    case antispamwitnessversion:
+        return f_antispamwitnessversion;
+    case antispamtaprootannex:
+        return f_antispamtaprootannex;
+    case antispamcontrolblocksize:
+        return f_antispamcontrolblocksize;
+    case antispamopsuccess:
+        return f_antispamopsuccess;
+    case antispamtapscriptif:
+        return f_antispamtapscriptif;
     case minrelaytxfee:
         return qlonglong(node().mempool().m_opts.min_relay_feerate.GetFeePerK());
     case minrelaycoinblocks:
@@ -1250,6 +1278,62 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
             const bool fNewValue = value.toBool();
             gArgs.ModifyRWConfigFile("spkreuse", fNewValue ? "conflict" : "allow");
             f_rejectspkreuse = fNewValue;
+            setRestartRequired(true);
+        }
+        break;
+    case antispamscriptpubkeysize:
+        if (changed()) {
+            const bool fNewValue = value.toBool();
+            node().updateRwSetting("antispamscriptpubkeysize", fNewValue);
+            f_antispamscriptpubkeysize = fNewValue;
+            setRestartRequired(true);
+        }
+        break;
+    case antispampushdatasize:
+        if (changed()) {
+            const bool fNewValue = value.toBool();
+            node().updateRwSetting("antispampushdatasize", fNewValue);
+            f_antispampushdatasize = fNewValue;
+            setRestartRequired(true);
+        }
+        break;
+    case antispamwitnessversion:
+        if (changed()) {
+            const bool fNewValue = value.toBool();
+            node().updateRwSetting("antispamwitnessversion", fNewValue);
+            f_antispamwitnessversion = fNewValue;
+            setRestartRequired(true);
+        }
+        break;
+    case antispamtaprootannex:
+        if (changed()) {
+            const bool fNewValue = value.toBool();
+            node().updateRwSetting("antispamtaprootannex", fNewValue);
+            f_antispamtaprootannex = fNewValue;
+            setRestartRequired(true);
+        }
+        break;
+    case antispamcontrolblocksize:
+        if (changed()) {
+            const bool fNewValue = value.toBool();
+            node().updateRwSetting("antispamcontrolblocksize", fNewValue);
+            f_antispamcontrolblocksize = fNewValue;
+            setRestartRequired(true);
+        }
+        break;
+    case antispamopsuccess:
+        if (changed()) {
+            const bool fNewValue = value.toBool();
+            node().updateRwSetting("antispamopsuccess", fNewValue);
+            f_antispamopsuccess = fNewValue;
+            setRestartRequired(true);
+        }
+        break;
+    case antispamtapscriptif:
+        if (changed()) {
+            const bool fNewValue = value.toBool();
+            node().updateRwSetting("antispamtapscriptif", fNewValue);
+            f_antispamtapscriptif = fNewValue;
             setRestartRequired(true);
         }
         break;

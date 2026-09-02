@@ -92,6 +92,13 @@ public:
         rejectparasites,        // bool
         rejecttokens,           // bool
         rejectspkreuse,         // bool
+        antispamscriptpubkeysize, // bool
+        antispampushdatasize,   // bool
+        antispamwitnessversion, // bool
+        antispamtaprootannex,   // bool
+        antispamcontrolblocksize, // bool
+        antispamopsuccess,      // bool
+        antispamtapscriptif,    // bool
         minrelaytxfee,
         minrelaycoinblocks,
         minrelaymaturity,
@@ -198,6 +205,13 @@ private:
     /* rwconf settings that require a restart */
     bool f_peerbloomfilters;
     bool f_rejectspkreuse;
+    bool f_antispamscriptpubkeysize;
+    bool f_antispampushdatasize;
+    bool f_antispamwitnessversion;
+    bool f_antispamtaprootannex;
+    bool f_antispamcontrolblocksize;
+    bool f_antispamopsuccess;
+    bool f_antispamtapscriptif;
 
     // Add option to list of GUI options overridden through command line/config file
     void addOverriddenOption(const std::string &option);

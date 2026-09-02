@@ -394,6 +394,48 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
     verticalLayout_Spamfiltering->addWidget(rejecttokens);
     FixTabOrder(rejecttokens);
 
+    antispamscriptpubkeysize = new QCheckBox(groupBox_Spamfiltering);
+    antispamscriptpubkeysize->setText(tr("Limit new output script size"));
+    antispamscriptpubkeysize->setToolTip(tr("With this option enabled, newly created non-OP_RETURN output scripts larger than 34 bytes will not be relayed or mined. Ordinary payment types (addresses) are well under this size; this mainly targets oversized scripts used to embed arbitrary data. Matches rule 1 of BIP-110."));
+    verticalLayout_Spamfiltering->addWidget(antispamscriptpubkeysize);
+    FixTabOrder(antispamscriptpubkeysize);
+
+    antispampushdatasize = new QCheckBox(groupBox_Spamfiltering);
+    antispampushdatasize->setText(tr("Limit script push-data and witness item size"));
+    antispampushdatasize->setToolTip(tr("With this option enabled, individual script push-data items and witness stack items larger than 256 bytes will not be relayed or mined (a P2SH redeemScript push itself is exempt). Matches rule 2 of BIP-110."));
+    verticalLayout_Spamfiltering->addWidget(antispampushdatasize);
+    FixTabOrder(antispampushdatasize);
+
+    antispamwitnessversion = new QCheckBox(groupBox_Spamfiltering);
+    antispamwitnessversion->setText(tr("Reject spending undefined witness versions"));
+    antispamwitnessversion->setToolTip(tr("With this option enabled, transactions spending an output with a witness version other than Witness v0, Taproot, or Pay-to-Anchor will not be relayed or mined. Matches rule 3 of BIP-110."));
+    verticalLayout_Spamfiltering->addWidget(antispamwitnessversion);
+    FixTabOrder(antispamwitnessversion);
+
+    antispamtaprootannex = new QCheckBox(groupBox_Spamfiltering);
+    antispamtaprootannex->setText(tr("Reject Taproot annex"));
+    antispamtaprootannex->setToolTip(tr("With this option enabled, transactions whose witness stack contains a Taproot annex will not be relayed or mined. Matches rule 4 of BIP-110."));
+    verticalLayout_Spamfiltering->addWidget(antispamtaprootannex);
+    FixTabOrder(antispamtaprootannex);
+
+    antispamcontrolblocksize = new QCheckBox(groupBox_Spamfiltering);
+    antispamcontrolblocksize->setText(tr("Limit Taproot control block size"));
+    antispamcontrolblocksize->setToolTip(tr("With this option enabled, transactions with a Taproot control block larger than 257 bytes will not be relayed or mined. Matches rule 5 of BIP-110."));
+    verticalLayout_Spamfiltering->addWidget(antispamcontrolblocksize);
+    FixTabOrder(antispamcontrolblocksize);
+
+    antispamopsuccess = new QCheckBox(groupBox_Spamfiltering);
+    antispamopsuccess->setText(tr("Reject OP_SUCCESS in tapscripts"));
+    antispamopsuccess->setToolTip(tr("With this option enabled, transactions whose tapscript contains an OP_SUCCESS opcode anywhere -- even in a branch that wouldn't execute -- will not be relayed or mined. Matches rule 6 of BIP-110."));
+    verticalLayout_Spamfiltering->addWidget(antispamopsuccess);
+    FixTabOrder(antispamopsuccess);
+
+    antispamtapscriptif = new QCheckBox(groupBox_Spamfiltering);
+    antispamtapscriptif->setText(tr("Reject OP_IF/OP_NOTIF execution in tapscripts"));
+    antispamtapscriptif->setToolTip(tr("With this option enabled, transactions whose tapscript executes OP_IF or OP_NOTIF will not be relayed or mined. This is the specific pattern used by Ordinals-style inscriptions to embed arbitrary data. Matches rule 7 of BIP-110."));
+    verticalLayout_Spamfiltering->addWidget(antispamtapscriptif);
+    FixTabOrder(antispamtapscriptif);
+
     minrelaytxfee = new BitcoinAmountField(groupBox_Spamfiltering);
     CreateOptionUI(verticalLayout_Spamfiltering, minrelaytxfee, tr("Ignore transactions offering miners less than %s per kvB in transaction fees."));
 
@@ -918,6 +960,13 @@ void OptionsDialog::setMapper()
     mapper->addMapping(rejectunknownwitness, OptionsModel::rejectunknownwitness);
     mapper->addMapping(rejectparasites, OptionsModel::rejectparasites);
     mapper->addMapping(rejecttokens, OptionsModel::rejecttokens);
+    mapper->addMapping(antispamscriptpubkeysize, OptionsModel::antispamscriptpubkeysize);
+    mapper->addMapping(antispampushdatasize, OptionsModel::antispampushdatasize);
+    mapper->addMapping(antispamwitnessversion, OptionsModel::antispamwitnessversion);
+    mapper->addMapping(antispamtaprootannex, OptionsModel::antispamtaprootannex);
+    mapper->addMapping(antispamcontrolblocksize, OptionsModel::antispamcontrolblocksize);
+    mapper->addMapping(antispamopsuccess, OptionsModel::antispamopsuccess);
+    mapper->addMapping(antispamtapscriptif, OptionsModel::antispamtapscriptif);
     mapper->addMapping(rejectspkreuse, OptionsModel::rejectspkreuse);
     mapper->addMapping(minrelaytxfee, OptionsModel::minrelaytxfee);
     mapper->addMapping(minrelaycoinblocks, OptionsModel::minrelaycoinblocks);
