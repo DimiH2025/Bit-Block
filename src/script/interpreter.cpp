@@ -606,6 +606,16 @@ bool EvalScript(std::vector<std::vector<unsigned char> >& stack, const CScript& 
                     bool fValue = false;
                     if (fExec)
                     {
+                        // Anti-spam policy: this branch is only reached when the
+                        // opcode is actually being executed (as opposed to being
+                        // syntactically skipped over inside an already-untaken
+                        // branch), matching BIP-110's definition of "executing"
+                        // OP_IF/OP_NOTIF. This is the exact envelope pattern
+                        // (OP_FALSE OP_IF ... OP_ENDIF) used by Ordinals-style
+                        // inscriptions. See policy/antispam.h.
+                        if (sigversion == SigVersion::TAPSCRIPT && (flags & SCRIPT_VERIFY_DISCOURAGE_TAPSCRIPT_IF)) {
+                            return set_error(serror, SCRIPT_ERR_DISCOURAGE_TAPSCRIPT_IF);
+                        }
                         if (stack.size() < 1)
                             return set_error(serror, SCRIPT_ERR_UNBALANCED_CONDITIONAL);
                         valtype& vch = stacktop(-1);
