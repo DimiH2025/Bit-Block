@@ -33,6 +33,7 @@
 #include <node/blockstorage.h>
 #include <node/utxo_snapshot.h>
 #include <policy/coin_age_priority.h>
+#include <policy/antispam.h>
 #include <policy/ephemeral_policy.h>
 #include <policy/policy.h>
 #include <policy/rbf.h>
@@ -1431,14 +1432,26 @@ bool MemPoolAccept::PackageMempoolChecks(const ATMPArgs& args, const std::vector
 
 unsigned int PolicyScriptVerifyFlags(const ignore_rejects_type& ignore_rejects)
 {
+    // Anti-spam policy (rules 6 and 7): SCRIPT_VERIFY_DISCOURAGE_OP_SUCCESS and
+    // SCRIPT_VERIFY_DISCOURAGE_TAPSCRIPT_IF are part of STANDARD_SCRIPT_VERIFY_FLAGS
+    // unconditionally; mask either back out here if the corresponding -antispam*
+    // switch has been turned off. See policy/antispam.h.
+    unsigned int standard_flags = STANDARD_SCRIPT_VERIFY_FLAGS;
+    if (!g_antispam_reject_op_success) {
+        standard_flags &= ~SCRIPT_VERIFY_DISCOURAGE_OP_SUCCESS;
+    }
+    if (!g_antispam_reject_tapscript_if) {
+        standard_flags &= ~SCRIPT_VERIFY_DISCOURAGE_TAPSCRIPT_IF;
+    }
+
     if (ignore_rejects.empty()) {
-        return STANDARD_SCRIPT_VERIFY_FLAGS;
+        return standard_flags;
     }
     if (ignore_rejects.count("non-mandatory-script-verify-flag")) {
         return MANDATORY_SCRIPT_VERIFY_FLAGS;
     }
 
-    unsigned int flags = STANDARD_SCRIPT_VERIFY_FLAGS;
+    unsigned int flags = standard_flags;
     if (ignore_rejects.count("non-mandatory-script-verify-flag-upgradable")) {
         constexpr unsigned int upgradable_policy_flags =
             SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS |
