@@ -12,6 +12,7 @@
 #include <consensus/consensus.h>
 #include <consensus/validation.h>
 #include <kernel/mempool_options.h>
+#include <policy/antispam.h>
 #include <policy/feerate.h>
 #include <policy/settings.h>
 #include <primitives/transaction.h>
@@ -178,6 +179,14 @@ bool IsStandardTx(const CTransaction& tx, const kernel::MemPoolOptions& opts, st
             MaybeReject("scriptpubkey");
         }
 
+        // Anti-spam policy, rule 1: new non-OP_RETURN output scripts over
+        // ANTISPAM_MAX_SCRIPTPUBKEY_SIZE bytes. OP_RETURN outputs are exempt
+        // here -- they're governed separately by max_datacarrier_bytes above.
+        if (g_antispam_limit_scriptpubkey_size && whichType != TxoutType::NULL_DATA
+                && txout.scriptPubKey.size() > ANTISPAM_MAX_SCRIPTPUBKEY_SIZE) {
+            MaybeReject("antispam-scriptpubkey-size");
+        }
+
         if (whichType == TxoutType::WITNESS_UNKNOWN && !opts.acceptunknownwitness) {
             MaybeReject("scriptpubkey-unknown-witnessversion");
         }
@@ -306,6 +315,37 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
 
         std::vector<std::vector<unsigned char> > vSolutions;
         TxoutType whichType = Solver(prev.scriptPubKey, vSolutions);
+
+        // Anti-spam policy, rule 2 (scriptSig half): push-data items over
+        // ANTISPAM_MAX_PUSHDATA_SIZE bytes, except the final push in a P2SH
+        // scriptSig (the redeemScript itself, per BIP16 -- its own contents
+        // are still subject to this same limit once evaluated as a script,
+        // via the P2SH branch further below).
+        if (g_antispam_limit_pushdata_size) {
+            std::vector<std::vector<unsigned char>> pushes;
+            CScript::const_iterator pc = tx.vin[i].scriptSig.begin();
+            opcodetype opcode;
+            std::vector<unsigned char> vch;
+            while (pc < tx.vin[i].scriptSig.end()) {
+                if (!tx.vin[i].scriptSig.GetOp(pc, opcode, vch)) {
+                    // Malformed scriptSig; other standardness checks (e.g.
+                    // scriptsig-not-pushonly) will already reject this, so
+                    // just stop scanning rather than fail differently here.
+                    break;
+                }
+                if (opcode <= OP_PUSHDATA4) {
+                    pushes.push_back(vch);
+                }
+            }
+            const size_t exempt_count = (whichType == TxoutType::SCRIPTHASH && !pushes.empty()) ? 1 : 0;
+            for (size_t j = 0; j + exempt_count < pushes.size(); ++j) {
+                if (pushes[j].size() > ANTISPAM_MAX_PUSHDATA_SIZE) {
+                    MaybeReject("antispam-pushdata-size");
+                    break;
+                }
+            }
+        }
+
         if (whichType == TxoutType::NONSTANDARD) {
             MaybeReject("script-unknown");
         } else if (whichType == TxoutType::WITNESS_UNKNOWN) {
@@ -313,7 +353,12 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
             // flag in the script interpreter, but it can be helpful to catch
             // this type of NONSTANDARD transaction earlier in transaction
             // validation.
-            MaybeReject("witness-unknown");
+            //
+            // Anti-spam policy, rule 3: this is exactly BIP-110's "spending an
+            // undefined witness version" restriction; the toggle guards it.
+            if (g_antispam_reject_undefined_witness_version) {
+                MaybeReject("witness-unknown");
+            }
         } else if (whichType == TxoutType::SCRIPTHASH) {
             if (!tx.vin[i].scriptSig.IsPushOnly()) {
                 // The only way we got this far, is if the user ignored scriptsig-not-pushonly.
@@ -404,6 +449,19 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
             MaybeReject("witness-size");
         }
 
+        // Anti-spam policy, rule 2 (witness half): every witness stack item
+        // over ANTISPAM_MAX_PUSHDATA_SIZE bytes. This is a backstop across
+        // all witness versions; P2WSH and Tapscript already have their own
+        // tighter, more specific limits checked further below.
+        if (g_antispam_limit_pushdata_size) {
+            for (const auto& item : tx.vin[i].scriptWitness.stack) {
+                if (item.size() > ANTISPAM_MAX_PUSHDATA_SIZE) {
+                    MaybeReject("antispam-witnessitem-size");
+                    break;
+                }
+            }
+        }
+
         // Check P2WSH standard limits
         if (witnessversion == 0 && witnessprogram.size() == WITNESS_V0_SCRIPTHASH_SIZE) {
             if (tx.vin[i].scriptWitness.stack.back().size() > MAX_STANDARD_P2WSH_SCRIPT_SIZE)
@@ -423,10 +481,18 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
         if (witnessversion == 1 && witnessprogram.size() == WITNESS_V1_TAPROOT_SIZE && !p2sh) {
             // Taproot spend (non-P2SH-wrapped, version 1, witness program size 32; see BIP 341)
             Span stack{tx.vin[i].scriptWitness.stack};
-            if (stack.size() >= 2 && !stack.back().empty() && stack.back()[0] == ANNEX_TAG) {
-                // Annexes are nonstandard as long as no semantics are defined for them.
-                MaybeReject("taproot-annex");
-                // If reject reason is ignored, continue as if the annex wasn't there.
+            const bool has_annex = stack.size() >= 2 && !stack.back().empty() && stack.back()[0] == ANNEX_TAG;
+            if (has_annex) {
+                // Anti-spam policy, rule 4: reject a witness stack containing
+                // a Taproot annex. (Also nonstandard regardless of this
+                // toggle, as long as no semantics are defined for annexes --
+                // but the toggle governs whether we reject it here.)
+                if (g_antispam_reject_taproot_annex) {
+                    MaybeReject("taproot-annex");
+                }
+                // Whether or not the above rejected, remove the annex before
+                // interpreting the remaining stack as control-block/script/
+                // arguments -- it is still structurally an annex either way.
                 SpanPopBack(stack);
             }
             if (stack.size() >= 2) {
@@ -437,6 +503,11 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
                     // Empty control block is invalid
                     out_reason = reason_prefix + "taproot-control-missing";
                     return false;
+                }
+                // Anti-spam policy, rule 5: Taproot control blocks over
+                // ANTISPAM_MAX_CONTROL_BLOCK_SIZE bytes.
+                if (g_antispam_limit_control_block_size && control_block.size() > ANTISPAM_MAX_CONTROL_BLOCK_SIZE) {
+                    MaybeReject("antispam-controlblock-size");
                 }
                 if ((control_block[0] & TAPROOT_LEAF_MASK) == TAPROOT_LEAF_TAPSCRIPT) {
                     // Leaf version 0xc0 (aka Tapscript, see BIP 342)
