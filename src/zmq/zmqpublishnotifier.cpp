@@ -18,6 +18,7 @@
 #include <serialize.h>
 #include <streams.h>
 #include <sync.h>
+#include <util/time.h>
 #include <uint256.h>
 #include <zmq/zmqutil.h>
 
@@ -48,6 +49,7 @@ static const char *MSG_RAWBLOCK  = "rawblock";
 static const char *MSG_RAWTX     = "rawtx";
 static const char *MSG_RAWWALLETTXMEMPOOL   = "rawwallettx-mempool";
 static const char *MSG_RAWWALLETTXBLOCK     = "rawwallettx-block";
+static const char *MSG_TEMPLATEHINT = "templatehint";
 static const char *MSG_SEQUENCE  = "sequence";
 
 // Internal function to send multipart message
@@ -337,4 +339,20 @@ bool CZMQPublishRawWalletTransactionNotifier::NotifyWalletTransaction(const CTra
         command = MSG_RAWWALLETTXMEMPOOL;
 
     return SendZmqMessage(command, &(*ss.begin()), ss.size());
+}
+
+bool CZMQPublishTemplateHintNotifier::NotifyTransaction(const CTransaction &transaction)
+{
+    const int64_t now = GetTime();
+    if (now - m_last_publish_time < m_min_interval) {
+        // Rate-limited: the mempool did just change, but we already
+        // published a hint recently enough that subscribers don't need
+        // another one yet.
+        return true;
+    }
+    m_last_publish_time = now;
+    LogDebug(BCLog::ZMQ, "Publish templatehint to %s\n", this->address);
+    uint8_t data[8];
+    WriteLE64(data, static_cast<uint64_t>(now));
+    return SendZmqMessage(MSG_TEMPLATEHINT, data, 8);
 }

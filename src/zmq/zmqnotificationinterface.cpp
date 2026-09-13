@@ -58,6 +58,7 @@ std::unique_ptr<CZMQNotificationInterface> CZMQNotificationInterface::Create(std
     factories["pubrawtx"] = CZMQAbstractNotifier::Create<CZMQPublishRawTransactionNotifier>;
     factories["pubrawwallettx"] = CZMQAbstractNotifier::Create<CZMQPublishRawWalletTransactionNotifier>;
     factories["pubsequence"] = CZMQAbstractNotifier::Create<CZMQPublishSequenceNotifier>;
+    factories["pubtemplatehint"] = CZMQAbstractNotifier::Create<CZMQPublishTemplateHintNotifier>;
 
     std::list<std::unique_ptr<CZMQAbstractNotifier>> notifiers;
     for (const auto& entry : factories)
@@ -74,6 +75,11 @@ std::unique_ptr<CZMQNotificationInterface> CZMQNotificationInterface::Create(std
             notifier->SetType(entry.first);
             notifier->SetAddress(address);
             notifier->SetOutboundMessageHighWaterMark(static_cast<int>(gArgs.GetIntArg(arg + "hwm", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM)));
+            if (entry.first == "pubtemplatehint") {
+                if (auto* hint_notifier = dynamic_cast<CZMQPublishTemplateHintNotifier*>(notifier.get())) {
+                    hint_notifier->SetMinInterval(gArgs.GetIntArg("-zmqpubtemplatehintinterval", CZMQPublishTemplateHintNotifier::DEFAULT_MIN_INTERVAL_SECONDS));
+                }
+            }
             notifiers.push_back(std::move(notifier));
         }
     }

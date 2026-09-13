@@ -84,4 +84,23 @@ public:
     bool NotifyTransactionRemoval(const CTransaction &transaction, uint64_t mempool_sequence) override;
 };
 
+// Bit-Block-specific: a rate-limited "the mempool has changed enough that a
+// fresh block template may be worth pulling" hint, primarily intended for
+// solo/pool mining software (e.g. DATUM Gateway) that otherwise has to poll
+// getblocktemplate on a fixed timer to discover new fee-paying transactions.
+// This is a hint only -- it carries no data of substance, and does not
+// replace the existing hashblock/rawblock notifiers for new-block awareness.
+class CZMQPublishTemplateHintNotifier : public CZMQAbstractPublishNotifier
+{
+private:
+    int64_t m_last_publish_time{0};
+    int64_t m_min_interval{DEFAULT_MIN_INTERVAL_SECONDS};
+
+public:
+    static constexpr int64_t DEFAULT_MIN_INTERVAL_SECONDS{1};
+
+    void SetMinInterval(int64_t seconds) { m_min_interval = seconds; }
+    bool NotifyTransaction(const CTransaction &transaction) override;
+};
+
 #endif // BITCOIN_ZMQ_ZMQPUBLISHNOTIFIER_H
