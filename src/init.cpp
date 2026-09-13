@@ -119,6 +119,7 @@
 #ifdef ENABLE_ZMQ
 #include <zmq/zmqabstractnotifier.h>
 #include <zmq/zmqnotificationinterface.h>
+#include <zmq/zmqpublishnotifier.h>
 #include <zmq/zmqrpc.h>
 #endif
 
@@ -148,6 +149,7 @@ using util::ReplaceAll;
 using util::ToString;
 
 static constexpr bool DEFAULT_COREPOLICY{false};
+static constexpr bool DEFAULT_DATUM{false};
 static constexpr bool DEFAULT_PROXYRANDOMIZE{true};
 static constexpr bool DEFAULT_REST_ENABLE{false};
 static constexpr bool DEFAULT_I2P_ACCEPT_INCOMING{true};
@@ -507,6 +509,7 @@ void SetupServerArgs(ArgsManager& argsman, bool can_listen_ipc)
     argsman.AddArg("-conf=<file>", strprintf("Specify path to read-only configuration file. Relative paths will be prefixed by datadir location (only useable from command line, not configuration file) (default: %s)", BITCOIN_CONF_FILENAME), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-confrw=<file>", strprintf("Specify read/write configuration file. Relative paths will be prefixed by the network-specific datadir location (default: %s)", BITCOIN_RW_CONF_FILENAME), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-corepolicy", strprintf("Use Bitcoin Core policy defaults (default: %u)", DEFAULT_COREPOLICY), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    argsman.AddArg("-datum", strprintf("Apply node settings recommended for solo/pool mining via DATUM Gateway: txindex, larger mempool, block-template size reserved for the pool's coinbase transaction, and a rate-limited ZMQ template-refresh hint (default: %u). This does NOT configure blocknotify or RPC credentials for DATUM Gateway itself -- those still need to be set up separately, since they depend on your specific DATUM Gateway installation.", DEFAULT_DATUM), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-datadir=<dir>", "Specify data directory", ArgsManager::ALLOW_ANY | ArgsManager::DISALLOW_NEGATION, OptionsCategory::OPTIONS);
     argsman.AddArg("-dbbatchsize", strprintf("Maximum database write batch size in bytes (default: %u)", nDefaultDbBatchSize), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::OPTIONS);
     argsman.AddArg("-dbcache=<n>", strprintf("Maximum database cache size <n> MiB (minimum %d, default: %d). Make sure you have enough RAM. In addition, unused memory allocated to the mempool is shared with this cache (see -maxmempool).", MIN_DB_CACHE >> 20, DEFAULT_DB_CACHE >> 20), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
@@ -644,6 +647,7 @@ void SetupServerArgs(ArgsManager& argsman, bool can_listen_ipc)
     argsman.AddArg("-zmqpubrawtx=<address>", "Enable publish raw transaction in <address>", ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
     argsman.AddArg("-zmqpubrawwallettx=<address>", "Enable publish raw wallet transaction in <address>", ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
     argsman.AddArg("-zmqpubsequence=<address>", "Enable publish hash block and tx sequence in <address>", ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
+    argsman.AddArg("-zmqpubtemplatehint=<address>", "Enable a rate-limited notification in <address> when the mempool changes enough that a fresh block template may be worth requesting (Bit-Block-specific; intended for mining software such as DATUM Gateway)", ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
     argsman.AddArg("-zmqpubhashblockhwm=<n>", strprintf("Set publish hash block outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
     argsman.AddArg("-zmqpubhashtxhwm=<n>", strprintf("Set publish hash transaction outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
     argsman.AddArg("-zmqpubhashwallettxhwm=<n>", strprintf("Set publish hash wallet transaction outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
@@ -651,6 +655,8 @@ void SetupServerArgs(ArgsManager& argsman, bool can_listen_ipc)
     argsman.AddArg("-zmqpubrawtxhwm=<n>", strprintf("Set publish raw transaction outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
     argsman.AddArg("-zmqpubrawwallettxhwm=<n>", strprintf("Set publish raw wallet transaction outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
     argsman.AddArg("-zmqpubsequencehwm=<n>", strprintf("Set publish hash sequence message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
+    argsman.AddArg("-zmqpubtemplatehinthwm=<n>", strprintf("Set publish template-hint outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
+    argsman.AddArg("-zmqpubtemplatehintinterval=<n>", strprintf("Minimum number of seconds between -zmqpubtemplatehint notifications (default: %d)", CZMQPublishTemplateHintNotifier::DEFAULT_MIN_INTERVAL_SECONDS), ArgsManager::ALLOW_ANY, OptionsCategory::ZMQ);
 #else
     hidden_args.emplace_back("-zmqpubhashblock=<address>");
     hidden_args.emplace_back("-zmqpubhashtx=<address>");
@@ -659,6 +665,7 @@ void SetupServerArgs(ArgsManager& argsman, bool can_listen_ipc)
     hidden_args.emplace_back("-zmqpubrawtx=<address>");
     hidden_args.emplace_back("-zmqpubrawwallettx=<address>");
     hidden_args.emplace_back("-zmqpubsequence=<n>");
+    hidden_args.emplace_back("-zmqpubtemplatehint=<address>");
     hidden_args.emplace_back("-zmqpubhashblockhwm=<n>");
     hidden_args.emplace_back("-zmqpubhashtxhwm=<n>");
     hidden_args.emplace_back("-zmqpubhashwallettxhwm=<n>");
@@ -666,6 +673,8 @@ void SetupServerArgs(ArgsManager& argsman, bool can_listen_ipc)
     hidden_args.emplace_back("-zmqpubrawtxhwm=<n>");
     hidden_args.emplace_back("-zmqpubrawwallettxhwm=<n>");
     hidden_args.emplace_back("-zmqpubsequencehwm=<n>");
+    hidden_args.emplace_back("-zmqpubtemplatehinthwm=<n>");
+    hidden_args.emplace_back("-zmqpubtemplatehintinterval=<n>");
 #endif
 
     argsman.AddArg("-checkblocks=<n>", strprintf("How many blocks to check at startup (default: %u, 0 = all)", DEFAULT_CHECKBLOCKS), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::DEBUG_TEST);
@@ -882,6 +891,29 @@ void InitParameterInteraction(ArgsManager& args)
         args.SoftSetArg("-blockprioritysize", "0");
         args.SoftSetArg("-blockmaxsize", "4000000");
         args.SoftSetArg("-blockmaxweight", "4000000");
+    }
+
+    if (args.GetBoolArg("-datum", DEFAULT_DATUM)) {
+        // DATUM Gateway (github.com/OCEAN-xyz/datum_gateway) connects to
+        // this node via RPC (getblocktemplate) and needs these settings.
+        // Values follow DATUM's own documented recommendations. This does
+        // NOT set blocknotify (its correct value depends entirely on where
+        // you installed DATUM Gateway) or any RPC credentials (a secret
+        // shouldn't be silently generated by a preset flag) -- both still
+        // need to be configured separately; see DATUM Gateway's own setup
+        // documentation.
+        args.SoftSetBoolArg("-server", true);
+        args.SoftSetBoolArg("-txindex", true);
+        // Leaves headroom below the ~4,000,000 weight-unit consensus
+        // maximum for the pool's coinbase/generation transaction.
+        args.SoftSetArg("-blockmaxweight", "3985000");
+        args.SoftSetArg("-blockmaxsize", "3985000");
+        args.SoftSetArg("-maxmempool", "1000");
+        args.SoftSetArg("-blockreconstructionextratxn", "1000000");
+        // A local-only default for the Bit-Block-specific template-refresh
+        // hint (see zmq/zmqpublishnotifier.h); override or disable via the
+        // usual -zmqpubtemplatehint= mechanism if you don't want this.
+        args.SoftSetArg("-zmqpubtemplatehint", "tcp://127.0.0.1:28338");
     }
 
     // when specifying an explicit binding address, you want to listen on it
