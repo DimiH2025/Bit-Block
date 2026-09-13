@@ -361,6 +361,12 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
     mempoolexpiry->setMaximum(std::numeric_limits<int>::max());
     CreateOptionUI(verticalLayout_Mempool, mempoolexpiry, tr("Do not keep transactions in memory more than %s hours"));
 
+    mine_with_datum = new QCheckBox(tabMempool);
+    mine_with_datum->setText(tr("Mine with DATUM"));
+    mine_with_datum->setToolTip(tr("With this option enabled, this node applies the settings recommended for solo/pool mining via DATUM Gateway (github.com/OCEAN-xyz/datum_gateway): a full transaction index, a larger mempool, block templates sized to leave room for the pool's coinbase transaction, and a rate-limited template-refresh notification DATUM Gateway can use. This does NOT configure DATUM Gateway itself, its RPC credentials, or its block-notify command -- those still need to be set up separately. Enabling the transaction index for the first time requires a one-time reindex of the blockchain."));
+    verticalLayout_Mempool->addWidget(mine_with_datum);
+    FixTabOrder(mine_with_datum);
+
     verticalLayout_Mempool->addItem(new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding));
 
     /* Filters tab */
@@ -955,6 +961,7 @@ void OptionsDialog::setMapper()
     mapper->addMapping(maxmempool, OptionsModel::maxmempool);
     mapper->addMapping(incrementalrelayfee, OptionsModel::incrementalrelayfee);
     mapper->addMapping(mempoolexpiry, OptionsModel::mempoolexpiry);
+    mapper->addMapping(mine_with_datum, OptionsModel::datum);
 
     mapper->addMapping(rejectunknownscripts, OptionsModel::rejectunknownscripts);
     mapper->addMapping(rejectunknownwitness, OptionsModel::rejectunknownwitness);

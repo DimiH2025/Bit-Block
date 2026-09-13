@@ -87,6 +87,7 @@ public:
         maxmempool,
         incrementalrelayfee,
         mempoolexpiry,
+        datum,                  // bool
         rejectunknownscripts,   // bool
         rejectunknownwitness,   // bool
         rejectparasites,        // bool
@@ -204,6 +205,7 @@ private:
 
     /* rwconf settings that require a restart */
     bool f_peerbloomfilters;
+    bool f_datum;
     bool f_rejectspkreuse;
     bool f_antispamscriptpubkeysize;
     bool f_antispampushdatasize;

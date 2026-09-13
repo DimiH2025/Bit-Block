@@ -90,6 +90,7 @@ static const char* SettingName(OptionsModel::OptionID option)
     case OptionsModel::rejectunknownwitness: return "rejectunknownwitness";
     case OptionsModel::rejectparasites: return "rejectparasites";
     case OptionsModel::rejecttokens: return "rejecttokens";
+    case OptionsModel::datum: return "datum";
     case OptionsModel::rejectspkreuse: return "rejectspkreuse";
     case OptionsModel::antispamscriptpubkeysize: return "antispamscriptpubkeysize";
     case OptionsModel::antispampushdatasize: return "antispampushdatasize";
@@ -428,6 +429,8 @@ bool OptionsModel::Init(bilingual_str& error)
     // rwconf settings that require a restart
     // Caution: This is before general initialisation occurs!
     f_peerbloomfilters = gArgs.GetBoolArg("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS);
+    // DEFAULT_DATUM is declared locally in init.cpp (not a shared header); keep in sync with its "-datum" registration there.
+    f_datum = gArgs.GetBoolArg("-datum", false);
     f_rejectspkreuse = !(gArgs.GetArg("-spkreuse", DEFAULT_SPKREUSE) == "allow" || gArgs.GetBoolArg("-spkreuse", false));
     f_antispamscriptpubkeysize = gArgs.GetBoolArg("-antispamscriptpubkeysize", true);
     f_antispampushdatasize = gArgs.GetBoolArg("-antispampushdatasize", true);
@@ -743,6 +746,8 @@ QVariant OptionsModel::getOption(OptionID option, const std::string& suffix) con
         return node().mempool().m_opts.reject_parasites;
     case rejecttokens:
         return node().mempool().m_opts.reject_tokens;
+    case datum:
+        return f_datum;
     case rejectspkreuse:
         return f_rejectspkreuse;
     case antispamscriptpubkeysize:
@@ -1273,6 +1278,14 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         }
         break;
     }
+    case datum:
+        if (changed()) {
+            const bool fNewValue = value.toBool();
+            node().updateRwSetting("datum", fNewValue);
+            f_datum = fNewValue;
+            setRestartRequired(true);
+        }
+        break;
     case rejectspkreuse:
         if (changed()) {
             const bool fNewValue = value.toBool();
