@@ -103,24 +103,29 @@ struct CompareTxIterByAncestorCount {
 };
 
 
-struct CTxMemPoolModifiedEntry_Indices final : boost::multi_index::indexed_by<
-    boost::multi_index::ordered_unique<
-        modifiedentry_iter,
-        CompareCTxMemPoolIter
-    >,
-    // sorted by modified ancestor fee rate
-    boost::multi_index::ordered_non_unique<
-        // Reuse same tag from CTxMemPool's similar index
-        boost::multi_index::tag<ancestor_score>,
-        boost::multi_index::identity<CTxMemPoolModifiedEntry>,
-        CompareTxMemPoolEntryByAncestorFee
-    >
->
-{};
-
+// Boost 1.91+ removed the pre-C++11 template-instantiation workarounds
+// that an older technique here (inheriting a named struct from
+// indexed_by<...> to shorten compiler symbol names) depended on, breaking
+// compilation with "implicit instantiation of undefined template".
+// indexed_by<...> is used directly here instead, matching upstream Bitcoin
+// Core's own fix (bitcoin/bitcoin#35214) -- this is no longer a necessary
+// optimization on any currently supported compiler. See also txmempool.h,
+// which has the same pattern for the same reason.
 typedef boost::multi_index_container<
     CTxMemPoolModifiedEntry,
-    CTxMemPoolModifiedEntry_Indices
+    boost::multi_index::indexed_by<
+        boost::multi_index::ordered_unique<
+            modifiedentry_iter,
+            CompareCTxMemPoolIter
+        >,
+        // sorted by modified ancestor fee rate
+        boost::multi_index::ordered_non_unique<
+            // Reuse same tag from CTxMemPool's similar index
+            boost::multi_index::tag<ancestor_score>,
+            boost::multi_index::identity<CTxMemPoolModifiedEntry>,
+            CompareTxMemPoolEntryByAncestorFee
+        >
+    >
 > indexed_modified_transaction_set;
 
 typedef indexed_modified_transaction_set::nth_index<0>::type::iterator modtxiter;
