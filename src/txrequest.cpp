@@ -212,17 +212,22 @@ struct ByTimeViewExtractor
     }
 };
 
-struct Announcement_Indices final : boost::multi_index::indexed_by<
-    boost::multi_index::ordered_unique<boost::multi_index::tag<ByPeer>, ByPeerViewExtractor>,
-    boost::multi_index::ordered_non_unique<boost::multi_index::tag<ByTxHash>, ByTxHashViewExtractor>,
-    boost::multi_index::ordered_non_unique<boost::multi_index::tag<ByTime>, ByTimeViewExtractor>
->
-{};
-
+// Boost 1.91+ removed the pre-C++11 template-instantiation workarounds
+// that an older technique here (inheriting a named struct from
+// indexed_by<...> to shorten compiler symbol names) depended on, breaking
+// compilation with "implicit instantiation of undefined template".
+// indexed_by<...> is used directly here instead, matching upstream Bitcoin
+// Core's own fix (bitcoin/bitcoin#35214) -- this is no longer a necessary
+// optimization on any currently supported compiler. See also txmempool.h
+// and node/miner.h, which have the same pattern for the same reason.
 /** Data type for the main data structure (Announcement objects with ByPeer/ByTxHash/ByTime indexes). */
 using Index = boost::multi_index_container<
     Announcement,
-    Announcement_Indices
+    boost::multi_index::indexed_by<
+        boost::multi_index::ordered_unique<boost::multi_index::tag<ByPeer>, ByPeerViewExtractor>,
+        boost::multi_index::ordered_non_unique<boost::multi_index::tag<ByTxHash>, ByTxHashViewExtractor>,
+        boost::multi_index::ordered_non_unique<boost::multi_index::tag<ByTime>, ByTimeViewExtractor>
+    >
 >;
 
 /** Helper type to simplify syntax of iterator types. */
