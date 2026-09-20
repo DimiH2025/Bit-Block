@@ -40,7 +40,6 @@ jobs:
       - name: Install build dependencies
         run: |
           brew install cmake boost pkgconf libevent
-          brew install berkeley-db@4
           brew install qt@5
           brew install qrencode
           brew install miniupnpc
@@ -52,7 +51,6 @@ jobs:
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_PREFIX_PATH="$(brew --prefix qt@5)" \
-            -DWITH_BDB=ON \
             -DBUILD_GUI=ON
 
       - name: Build
