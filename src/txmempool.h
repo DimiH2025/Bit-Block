@@ -344,7 +344,16 @@ public:
 
     static const int ROLLING_FEE_HALFLIFE = 60 * 60 * 12; // public only for testing
 
-    struct CTxMemPoolEntry_Indices final : boost::multi_index::indexed_by<
+    // Boost 1.91+ removed the pre-C++11 template-instantiation workarounds
+    // that an older technique here (inheriting a named struct from
+    // indexed_by<...> to shorten compiler symbol names) depended on,
+    // breaking compilation with "implicit instantiation of undefined
+    // template". indexed_by<...> is used directly here instead, matching
+    // upstream Bitcoin Core's own fix (bitcoin/bitcoin#35214) -- this is no
+    // longer a necessary optimization on any currently supported compiler.
+    typedef boost::multi_index_container<
+        CTxMemPoolEntry,
+        boost::multi_index::indexed_by<
             // sorted by txid
             boost::multi_index::hashed_unique<mempoolentry_txid, SaltedTxidHasher>,
             // sorted by wtxid
@@ -372,10 +381,6 @@ public:
                 CompareTxMemPoolEntryByAncestorFee
             >
         >
-        {};
-    typedef boost::multi_index_container<
-        CTxMemPoolEntry,
-        CTxMemPoolEntry_Indices
     > indexed_transaction_set;
 
     /**
