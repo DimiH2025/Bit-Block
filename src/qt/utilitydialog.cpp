@@ -33,7 +33,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
 {
     ui->setupUi(this);
 
-    QString version = QString{CLIENT_NAME} + " " + tr("version") + " " + QString::fromStdString(FormatFullVersion());
+    QString version = tr("version") + " " + QString::fromStdString(FormatFullVersion());
 
     if (about)
     {
