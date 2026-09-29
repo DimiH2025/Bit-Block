@@ -41,7 +41,7 @@ set(COPYRIGHT_YEAR "2026")
 # CLIENT_VERSION_MAJOR/MINOR/BUILD above, which track the upstream base this
 # fork was built from and remain accurate internally (network protocol
 # version string, RPC version fields, etc. are unaffected by this).
-set(BITBLOCK_RELEASE_VERSION "2")
+set(BITBLOCK_RELEASE_VERSION "3")
 
 
 # During the enabling of the CXX and CXXOBJ languages, we modify
