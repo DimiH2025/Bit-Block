@@ -38,6 +38,10 @@ extern const std::string UA_NAME;
 
 
 std::string FormatFullVersion();
+//! Just "V2", "V3", etc. -- no product name. For contexts (like the splash
+//! screen) that already show the product name elsewhere and would look
+//! redundant repeating it right next to the version number.
+std::string FormatBitBlockReleaseVersion();
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments, bool base_name_only = false);
 
 std::string CopyrightHolders(const std::string& strPrefix);

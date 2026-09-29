@@ -58,13 +58,28 @@ static std::string FormatVersion(int nVersion)
 
 std::string FormatFullVersion()
 {
-    // Bit-Block shows its own simple release counter ("V2", "V3", ...) here
-    // instead of the raw upstream Knots/Core version string, which was
-    // confusing users. The real underlying build (CLIENT_BUILD, e.g.
-    // "v29.1.0.knots20250903") is intentionally left untouched and still
-    // used for the P2P network version string in FormatSubVersion() below --
-    // it remains visible for support/debugging purposes via the
-    // "subversion" field in the getnetworkinfo RPC (or `bitcoin-cli -netinfo`).
+    // Bit-Block shows its own simple release counter ("Bit-Block V2",
+    // "Bit-Block V3", ...) here instead of the raw upstream Knots/Core
+    // version string, which was confusing users. This is deliberately
+    // self-contained (includes the product name) so it reads correctly on
+    // its own everywhere it's used, including places with no other nearby
+    // branding text (e.g. the "clientversion" RPC field). Callers that used
+    // to prepend CLIENT_NAME themselves have had that removed to avoid
+    // "Bit-Block Bit-Block V3"-style duplication -- see the callers of this
+    // function if adding a new one. For a context that already shows the
+    // product name elsewhere (e.g. the splash screen's title graphic), use
+    // FormatBitBlockReleaseVersion() below instead.
+    //
+    // The real underlying build (CLIENT_BUILD, e.g. "v29.1.0.knots20250903")
+    // is intentionally left untouched and still used for the P2P network
+    // version string in FormatSubVersion() below -- it remains visible for
+    // support/debugging purposes via the "subversion" field in the
+    // getnetworkinfo RPC (or `bitcoin-cli -netinfo`).
+    return CLIENT_NAME " V" BITBLOCK_RELEASE_VERSION;
+}
+
+std::string FormatBitBlockReleaseVersion()
+{
     return "V" BITBLOCK_RELEASE_VERSION;
 }
 
