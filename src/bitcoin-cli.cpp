@@ -155,7 +155,7 @@ static int AppInitRPC(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     if (argc < 2 || HelpRequested(gArgs) || gArgs.GetBoolArg("-version", false)) {
-        std::string strUsage = CLIENT_NAME " RPC client version " + FormatFullVersion() + "\n";
+        std::string strUsage = "RPC client " + FormatFullVersion() + "\n";
 
         if (gArgs.GetBoolArg("-version", false)) {
             strUsage += FormatParagraph(LicenseInfo());
@@ -616,7 +616,7 @@ public:
 
         // Generate report header.
         const std::string services{DetailsRequested() ? strprintf(" - services %s", FormatServices(networkinfo["localservicesnames"])) : ""};
-        std::string result{strprintf("%s client %s%s - server %i%s%s\n\n", CLIENT_NAME, FormatFullVersion(), ChainToString(), networkinfo["protocolversion"].getInt<int>(), networkinfo["subversion"].get_str(), services)};
+        std::string result{strprintf("client %s%s - server %i%s%s\n\n", FormatFullVersion(), ChainToString(), networkinfo["protocolversion"].getInt<int>(), networkinfo["subversion"].get_str(), services)};
 
         // Report detailed peer connections list sorted by direction and minimum ping time.
         if (DetailsRequested() && !m_peers.empty()) {
