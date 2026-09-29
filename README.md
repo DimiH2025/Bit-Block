@@ -4,6 +4,8 @@ Bit-block
 https://bit-block.org/bit-block-bitcoin-development/
 
 For an immediately usable, binary version of the Bit-block software, see website and Github Releases page. 
+- https://github.com/DimiH2025/Bit-Block/releases/tag/V3.0 for Github Releases
+- https://bit-block.org/bit-block-bitcoin-development/ for binary versions on website
 
 --> binary versions V1.0 are ready 
 
