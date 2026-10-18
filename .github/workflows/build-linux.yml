@@ -63,8 +63,11 @@ jobs:
 
       - name: Package binaries into a tarball
         run: |
-          version=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
-          staging="bit-block-${version}-x86_64-linux-gnu"
+          # Read the release number from the single source of truth, so the
+          # tarball name always matches what the app itself displays.
+          version=$(sed -n 's/^set(BITBLOCK_RELEASE_VERSION "\(.*\)")$/\1/p' CMakeLists.txt)
+          [ -n "$version" ] || version="dev"
+          staging="bit-block-V${version}-x86_64-linux-gnu"
           mkdir -p "$staging"
           # Copy every built executable (bitcoind, bitcoin-qt, bitcoin-cli,
           # bitcoin-tx, bitcoin-wallet, bitcoin-util, test_bitcoin, etc.)
