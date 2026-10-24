@@ -181,7 +181,33 @@ class DeploymentInfo(object):
                     return True
         return False
 
-def getFrameworks(binaryPath: str, verbose: int) -> list[FrameworkInfo]:
+def resolveRpathDylib(installName: str, referencedFrom: Optional[str]) -> Optional[str]:
+    """Locate the real file behind an '@rpath/<name>' reference.
+
+    Homebrew dylibs often refer to their siblings as '@rpath/libfoo.dylib'.
+    Such a reference cannot be opened as-is, so look next to the library that
+    made the reference (and its symlink target), then in the Homebrew lib dirs.
+    """
+    if not installName.startswith("@rpath/"):
+        return None
+    relative = installName[len("@rpath/"):]
+    searchDirs = []
+    if referencedFrom:
+        searchDirs.append(os.path.dirname(referencedFrom))
+        searchDirs.append(os.path.dirname(os.path.realpath(referencedFrom)))
+    prefix = os.getenv("HOMEBREW_PREFIX")
+    if prefix:
+        searchDirs.append(os.path.join(prefix, "lib"))
+    searchDirs += ["/opt/homebrew/lib", "/usr/local/lib"]
+    for directory in searchDirs:
+        candidate = os.path.join(directory, relative)
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+def getFrameworks(binaryPath: str, verbose: int, sourcePath: Optional[str] = None) -> list[FrameworkInfo]:
+    # sourcePath is the original location of binaryPath when binaryPath is a
+    # copy inside the bundle; relative references must be resolved against it.
     objdump = os.getenv("OBJDUMP", "objdump")
     if verbose:
         print(f"Inspecting with {objdump}: {binaryPath}")
@@ -198,9 +224,15 @@ def getFrameworks(binaryPath: str, verbose: int) -> list[FrameworkInfo]:
     
     libraries = []
     for line in lines:
-        line = line.replace("@loader_path", os.path.dirname(binaryPath))
+        line = line.replace("@loader_path", os.path.dirname(sourcePath or binaryPath))
         info = FrameworkInfo.fromLibraryLine(line.strip())
         if info is not None:
+            if info.isDylib():
+                resolved = resolveRpathDylib(info.installName, sourcePath or binaryPath)
+                if resolved is not None:
+                    # Only where to copy from changes; installName must stay
+                    # as written in the binary so install_name_tool matches it.
+                    info.sourceFilePath = resolved
             if verbose:
                 print("Found framework:")
                 print(info)
@@ -318,7 +350,7 @@ def deployFrameworks(frameworks: list[FrameworkInfo], bundlePath: str, binaryPat
         # install_name_tool it a new id.
         changeIdentification(framework.deployedInstallName, deployedBinaryPath, verbose)
         # Check for framework dependencies
-        dependencies = getFrameworks(deployedBinaryPath, verbose)
+        dependencies = getFrameworks(deployedBinaryPath, verbose, framework.sourceFilePath)
         
         for dependency in dependencies:
             changeInstallName(dependency.installName, dependency.deployedInstallName, deployedBinaryPath, verbose)
@@ -372,7 +404,7 @@ def deployPlugins(appBundleInfo: ApplicationBundleInfo, deploymentInfo: Deployme
         if strip:
             runStrip(destinationPath, verbose)
         
-        dependencies = getFrameworks(destinationPath, verbose)
+        dependencies = getFrameworks(destinationPath, verbose, sourcePath)
         
         for dependency in dependencies:
             changeInstallName(dependency.installName, dependency.deployedInstallName, destinationPath, verbose)
