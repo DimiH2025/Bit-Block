@@ -7,6 +7,7 @@
 
 #include <crypto/hmac_sha512.h>
 #include <crypto/sha256.h>
+#include <support/cleanse.h>
 
 #include <array>
 #include <map>
@@ -37,6 +38,22 @@ const std::map<std::string, uint16_t>& WordIndexMap()
     return map;
 }
 
+//! Split on any run of ASCII whitespace (space, tab, CR, LF).
+std::vector<std::string> SplitWords(const std::string& s)
+{
+    std::vector<std::string> words;
+    std::string word;
+    for (char c : s) {
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+            if (!word.empty()) { words.push_back(word); word.clear(); }
+        } else {
+            word += c;
+        }
+    }
+    if (!word.empty()) words.push_back(word);
+    return words;
+}
+
 void AppendBits(std::vector<bool>& bits, uint32_t value, size_t num_bits)
 {
     for (size_t i = num_bits; i-- > 0;) {
@@ -52,7 +69,10 @@ std::string EntropyToMnemonic(const std::vector<unsigned char>& entropy, size_t 
     std::vector<bool> bits;
     bits.reserve(entropy.size() * 8 + checksum_bits);
     for (unsigned char byte : entropy) AppendBits(bits, byte, 8);
-    AppendBits(bits, hash[0], checksum_bits);
+    // The checksum is the FIRST checksum_bits bits of SHA256(entropy) (the high
+    // bits of hash[0]), matching what CheckMnemonic() verifies. Appending the
+    // low bits instead yields an invalid checksum for 12-word mnemonics.
+    AppendBits(bits, hash[0] >> (8 - checksum_bits), checksum_bits);
 
     std::string mnemonic;
     for (size_t i = 0; i < bits.size(); i += 11) {
@@ -113,18 +133,7 @@ bool CheckMnemonic(const std::string& mnemonic, Error& error)
 {
     error = Error::NONE;
 
-    std::vector<std::string> words;
-    {
-        std::string word;
-        for (char c : mnemonic) {
-            if (c == ' ') {
-                if (!word.empty()) { words.push_back(word); word.clear(); }
-            } else {
-                word += c;
-            }
-        }
-        if (!word.empty()) words.push_back(word);
-    }
+    const std::vector<std::string> words = SplitWords(mnemonic);
 
     if (words.size() != 12 && words.size() != 24) {
         error = Error::BAD_WORD_COUNT;
@@ -165,8 +174,18 @@ bool CheckMnemonic(const std::string& mnemonic, Error& error)
     return true;
 }
 
-std::vector<unsigned char> MnemonicToSeed(const std::string& mnemonic, const std::string& passphrase)
+std::vector<unsigned char> MnemonicToSeed(const std::string& mnemonic_in, const std::string& passphrase)
 {
+    // Canonicalise the sentence the way other BIP-39 wallets do: words joined
+    // by exactly one space, no leading/trailing whitespace. Without this, a
+    // stray double or trailing space would still pass CheckMnemonic() but
+    // derive a different seed than every other wallet for the same words.
+    std::string mnemonic;
+    for (const auto& w : SplitWords(mnemonic_in)) {
+        if (!mnemonic.empty()) mnemonic += ' ';
+        mnemonic += w;
+    }
+
     const std::string salt = "mnemonic" + passphrase;
 
     std::array<unsigned char, CHMAC_SHA512::OUTPUT_SIZE> u{};
@@ -191,7 +210,11 @@ std::vector<unsigned char> MnemonicToSeed(const std::string& mnemonic, const std
         for (size_t j = 0; j < t.size(); ++j) t[j] ^= u[j];
     }
 
-    return std::vector<unsigned char>(t.begin(), t.end());
+    std::vector<unsigned char> seed(t.begin(), t.end());
+    memory_cleanse(u.data(), u.size());
+    memory_cleanse(t.data(), t.size());
+    memory_cleanse(mnemonic.data(), mnemonic.size());
+    return seed;
 }
 
 } // namespace bip39
