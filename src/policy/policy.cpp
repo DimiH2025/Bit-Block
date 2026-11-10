@@ -449,13 +449,30 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
             MaybeReject("witness-size");
         }
 
-        // Anti-spam policy, rule 2 (witness half): every witness stack item
-        // over ANTISPAM_MAX_PUSHDATA_SIZE bytes. This is a backstop across
-        // all witness versions; P2WSH and Tapscript already have their own
-        // tighter, more specific limits checked further below.
+        // Anti-spam policy, rule 2 (witness half): "script argument" witness
+        // items over ANTISPAM_MAX_PUSHDATA_SIZE bytes. Per BIP-110 this does
+        // NOT cover the scripts themselves or Taproot control blocks: the
+        // P2WSH witness script, and the Tapleaf script and control block of a
+        // Taproot script-path spend, are exempt (the control block has its own
+        // limit under rule 5). Without this exemption legitimate large
+        // scripts (e.g. big multisigs) would be rejected.
         if (g_antispam_limit_pushdata_size) {
-            for (const auto& item : tx.vin[i].scriptWitness.stack) {
-                if (item.size() > ANTISPAM_MAX_PUSHDATA_SIZE) {
+            size_t exempt_tail = 0; // number of trailing stack items that are scripts / control blocks
+            const auto& wstack = tx.vin[i].scriptWitness.stack;
+            if (witnessversion == 0 && witnessprogram.size() == WITNESS_V0_SCRIPTHASH_SIZE) {
+                exempt_tail = 1; // witness script
+            } else if (witnessversion == 1 && witnessprogram.size() == WITNESS_V1_TAPROOT_SIZE && !p2sh) {
+                size_t n = wstack.size();
+                if (n >= 2 && !wstack.back().empty() && wstack.back()[0] == ANNEX_TAG) {
+                    --n; // annex is rejected separately by rule 4
+                }
+                if (n >= 2) exempt_tail = 2; // control block + Tapleaf script (script path)
+                // (when an annex is present, it is the last item and is skipped below too)
+                if (n != wstack.size()) exempt_tail += 1;
+            }
+            const size_t checked = wstack.size() > exempt_tail ? wstack.size() - exempt_tail : 0;
+            for (size_t j = 0; j < checked; ++j) {
+                if (wstack[j].size() > ANTISPAM_MAX_PUSHDATA_SIZE) {
                     MaybeReject("antispam-witnessitem-size");
                     break;
                 }
@@ -531,6 +548,42 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
         }
     }
     return true;
+}
+
+bool SpendsNonAnchorWitnessProg(const CTransaction& tx, const CCoinsViewCache& prevouts)
+{
+    if (tx.IsCoinBase()) {
+        return false;
+    }
+
+    int version;
+    std::vector<uint8_t> program;
+    for (const auto& txin: tx.vin) {
+        const auto& prev_spk{prevouts.AccessCoin(txin.prevout).out.scriptPubKey};
+
+        // Note this includes not-yet-defined witness programs.
+        if (prev_spk.IsWitnessProgram(version, program) && !prev_spk.IsPayToAnchor(version, program)) {
+            return true;
+        }
+
+        // For P2SH extract the redeem script and check if it spends a non-Taproot witness program. Note
+        // this is fine to call EvalScript (as done in AreInputsStandard/IsWitnessStandard) because this
+        // function is only ever called after IsStandardTx, which checks the scriptsig is pushonly.
+        if (prev_spk.IsPayToScriptHash()) {
+            // If EvalScript fails or results in an empty stack, the transaction is invalid by consensus.
+            std::vector <std::vector<uint8_t>> stack;
+            if (!EvalScript(stack, txin.scriptSig, SCRIPT_VERIFY_NONE, BaseSignatureChecker{}, SigVersion::BASE)
+                || stack.empty()) {
+                continue;
+            }
+            const CScript redeem_script{stack.back().begin(), stack.back().end()};
+            if (redeem_script.IsWitnessProgram(version, program)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 int64_t GetVirtualTransactionSize(int64_t nWeight, int64_t nSigOpCost, unsigned int bytes_per_sigop)
