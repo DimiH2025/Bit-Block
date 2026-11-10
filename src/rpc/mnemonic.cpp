@@ -96,6 +96,16 @@ static RPCHelpMan mnemonictoseed()
             const std::string passphrase = self.Arg<std::string>("passphrase");
             const bool require_valid = self.Arg<bool>("require_valid");
 
+            // BIP-39 requires UTF-8 NFKD normalisation of the passphrase. That
+            // is not implemented here, and for non-ASCII text the result would
+            // silently differ from other wallets (and the funds could not be
+            // recovered elsewhere), so refuse rather than derive a wrong seed.
+            for (unsigned char c : passphrase) {
+                if (c >= 0x80) {
+                    throw JSONRPCError(RPC_INVALID_PARAMETER, "passphrase must be ASCII: Unicode (NFKD) normalisation is not supported, so a non-ASCII passphrase would not match other BIP-39 wallets");
+                }
+            }
+
             if (require_valid) {
                 bip39::Error error;
                 if (!bip39::CheckMnemonic(mnemonic, error)) {
