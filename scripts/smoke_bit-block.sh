@@ -16,7 +16,9 @@ EXPECTED_SHA256="3752cf932309cd98734eb20ebb6c7aea4b8a10eb329b3d8d8fbd00098ea674f
 
 # Directory configuration with absolute paths for deployment safety
 BIN_DIR="$(pwd)/bin/bit-block/bin"
-DOWNLOAD_DIR="/tmp/bitcoin-bit-block-download"
+# mktemp -d creates a fresh, private (0700) directory; a fixed /tmp path could be
+# pre-created or symlinked by another local user.
+DOWNLOAD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/bit-block-download.XXXXXX")"
 CACHE_FILE="$(pwd)/.bit-block_downloaded"
 VERIFICATION_FILE="$(pwd)/.bit-block_verified"
 
