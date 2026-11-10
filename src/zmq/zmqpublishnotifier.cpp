@@ -344,7 +344,7 @@ bool CZMQPublishRawWalletTransactionNotifier::NotifyWalletTransaction(const CTra
 bool CZMQPublishTemplateHintNotifier::NotifyTransaction(const CTransaction &transaction)
 {
     const int64_t now = GetTime();
-    if (now - m_last_publish_time < m_min_interval) {
+    if (now >= m_last_publish_time && now - m_last_publish_time < m_min_interval) {
         // Rate-limited: the mempool did just change, but we already
         // published a hint recently enough that subscribers don't need
         // another one yet.
