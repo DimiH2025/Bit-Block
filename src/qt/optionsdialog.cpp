@@ -363,7 +363,7 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
 
     mine_with_datum = new QCheckBox(tabMempool);
     mine_with_datum->setText(tr("Mine with DATUM"));
-    mine_with_datum->setToolTip(tr("With this option enabled, this node applies the settings recommended for solo/pool mining via DATUM Gateway (github.com/OCEAN-xyz/datum_gateway): a full transaction index, a larger mempool, block templates sized to leave room for the pool's coinbase transaction, and a rate-limited template-refresh notification DATUM Gateway can use. This does NOT configure DATUM Gateway itself, its RPC credentials, or its block-notify command -- those still need to be set up separately. Enabling the transaction index for the first time requires a one-time reindex of the blockchain."));
+    mine_with_datum->setToolTip(tr("With this option enabled, this node applies the settings recommended for solo/pool mining via DATUM Gateway (github.com/OCEAN-xyz/datum_gateway): a full transaction index, a larger mempool, block templates sized to leave room for the pool's coinbase transaction, and a rate-limited template-refresh notification DATUM Gateway can use. This does NOT configure DATUM Gateway itself, its RPC credentials, or its block-notify command -- those still need to be set up separately. Enabling the transaction index for the first time makes the node build it in the background, which can take a while. The transaction index cannot be used together with pruning: on a pruned node it is skipped (and DATUM Gateway features that need it will not work)."));
     verticalLayout_Mempool->addWidget(mine_with_datum);
     FixTabOrder(mine_with_datum);
 
@@ -408,7 +408,7 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
 
     antispampushdatasize = new QCheckBox(groupBox_Spamfiltering);
     antispampushdatasize->setText(tr("Limit script push-data and witness item size"));
-    antispampushdatasize->setToolTip(tr("With this option enabled, individual script push-data items and witness stack items larger than 256 bytes will not be relayed or mined (a P2SH redeemScript push itself is exempt). Matches rule 2 of BIP-110."));
+    antispampushdatasize->setToolTip(tr("With this option enabled, individual script push-data items and witness argument items larger than 256 bytes will not be relayed or mined. Scripts themselves are exempt: a P2SH redeemScript, a P2WSH witness script and a Taproot leaf script, as well as Taproot control blocks (which have their own limit). Matches rule 2 of BIP-110."));
     verticalLayout_Spamfiltering->addWidget(antispampushdatasize);
     FixTabOrder(antispampushdatasize);
 
@@ -859,6 +859,12 @@ void OptionsDialog::setModel(OptionsModel *_model)
     connect(ui->peerblockfilters, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
     /* Mempool */
     connect(rejectspkreuse, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
+    connect(mine_with_datum, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
+    /* Spam filtering: the anti-spam switches are read once at startup */
+    for (QCheckBox* cb : {antispamscriptpubkeysize, antispampushdatasize, antispamwitnessversion, antispamtaprootannex,
+                          antispamcontrolblocksize, antispamopsuccess, antispamtapscriptif}) {
+        connect(cb, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
+    }
     /* Display */
     connect(ui->lang, qOverload<>(&QValueComboBox::valueChanged), [this]{ showRestartWarning(); });
     connect(ui->thirdPartyTxUrls, &QLineEdit::textChanged, [this]{ showRestartWarning(); });
