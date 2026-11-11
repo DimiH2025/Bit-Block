@@ -59,11 +59,22 @@ jobs:
       - name: Cache depends build
         uses: actions/cache@v5
         with:
-          path: depends/built
+          path: |
+            depends/built
+            depends/sources
           key: depends-win64-${{ hashFiles('depends/packages/*.mk', 'depends/Makefile') }}
 
       - name: Build dependency tree (x86_64-w64-mingw32)
-        run: make -C depends HOST=x86_64-w64-mingw32 -j$(nproc)
+        # Source downloads come from third-party servers that are occasionally
+        # unreachable (e.g. miniupnp.tuxfamily.org). The depends build is
+        # resumable, so retry a few times before giving up.
+        run: |
+          for attempt in 1 2 3; do
+            if make -C depends HOST=x86_64-w64-mingw32 -j$(nproc); then exit 0; fi
+            echo "depends build failed (attempt $attempt), retrying in 60s..."
+            sleep 60
+          done
+          exit 1
 
       - name: Configure
         run: cmake -B build --toolchain depends/x86_64-w64-mingw32/toolchain.cmake
