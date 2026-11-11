@@ -1,6 +1,8 @@
 package=miniupnpc
 $(package)_version=2.3.3
-$(package)_download_path=https://miniupnp.tuxfamily.org/files/
+# The original host (miniupnp.tuxfamily.org) is often unreachable from CI. The GitHub release
+# serves the byte-identical tarball (same SHA-256 below).
+$(package)_download_path=https://github.com/miniupnp/miniupnp/releases/download/miniupnpc_$(subst .,_,$($(package)_version))/
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
 $(package)_sha256_hash=d52a0afa614ad6c088cc9ddff1ae7d29c8c595ac5fdd321170a05f41e634bd1a
 $(package)_patches=dont_leak_info.patch
