@@ -537,7 +537,10 @@ public:
                             /* m_coins_to_uncache */ coins_to_uncache,
                             /* m_test_accept */ test_accept,
                             /* m_allow_replacement */ true,
-                            /* m_allow_sibling_eviction */ true,
+                            // CVE-2025-62861 (Core #33504): never evict a TRUC sibling when re-adding
+                            // transactions from disconnected blocks (reorg, marked by the zero entry
+                            // sequence reject-override). Otherwise a reorg can evict valid mempool txs.
+                            /* m_allow_sibling_eviction */ !ignore_rejects.count(rejectmsg_zero_mempool_entry_seq),
                             /* m_package_submission */ false,
                             /* m_package_feerates */ false,
                             /* m_client_maxfeerate */ {}, // checked by caller
