@@ -27,6 +27,12 @@ Upstream tests were ported where they applied (not `src/test/transaction_tests.c
 - Miner block-weight reserve change (Core #34268 part): Bit-Block's miner code does not use `block_reserved_weight`.
 - Doc and seed-list changes.
 
+## Known test failures inherited from the Knots 29.1 base
+
+- `descriptor_tests/descriptor_test` (6 checks): signing Taproot miniscript that uses `OP_IF` fails because Knots 29.1 already discourages `OP_IF` in tapscript in its standard script flags. Not caused by Bit-Block.
+- Knots 29.1's `transaction_tests` flag map missed `DISCOURAGE_TAPSCRIPT_IF`, and `miniscript_tests` used the standard flags unchanged. V4 fixes both in the tests.
+- The seven anti-spam rules are on by default in the node, so V4 switches them off at the start of every unit test (`src/test/util/setup_common.cpp`); `src/test/antispam_tests.cpp` turns them on where it checks them.
+
 ## Still to check (open)
 
 - Core notes for 32.1: #35384 (settings.json), #35227, #35228, #35316 (MuSig), #35410 (private broadcast), not yet reviewed against Bit-Block.
