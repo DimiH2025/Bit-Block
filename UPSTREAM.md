@@ -15,6 +15,7 @@ Bit-Block's anti-spam rules are local policy only and never change consensus.
 | Core #33474 | `getblockheader` target for the requested block | `src/rpc/blockchain.cpp` |
 | Core #34268, #35234 | `sendall` unsolvable descriptors, input-size estimate, `IsFromMe` | `src/wallet/rpc/spend.cpp`, `src/wallet/spend.cpp`, `src/wallet/wallet.cpp` |
 | Core #34680 | Netlink build fix | `src/common/netif.cpp` |
+| Core #33504 (CVE-2025-62861, High) | No TRUC sibling eviction when re-adding transactions from disconnected blocks (reorg); keyed on the reorg reject-override in `SingleAccept` | `src/validation.cpp` |
 | Own, along the lines of Core #34544 | Reject wallet names with `.` / `..` path elements | `src/wallet/wallet.cpp` |
 
 Upstream tests were ported where they applied (not `src/test/transaction_tests.cpp`).
@@ -23,7 +24,6 @@ Upstream tests were ported where they applied (not `src/test/transaction_tests.c
 
 - Knots BIP-110 / RDTS consensus enforcement (29.3+).
 - Knots commit to the block's transaction count (CVE-2017-12842 change).
-- TRUC check skipped on reorg (Core #33474 part): Knots 29.1 has no `bypass_limits` plumbing.
 - Miner block-weight reserve change (Core #34268 part): Bit-Block's miner code does not use `block_reserved_weight`.
 - Doc and seed-list changes.
 
