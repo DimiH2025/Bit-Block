@@ -903,7 +903,15 @@ void InitParameterInteraction(ArgsManager& args)
         // need to be configured separately; see DATUM Gateway's own setup
         // documentation.
         args.SoftSetBoolArg("-server", true);
-        args.SoftSetBoolArg("-txindex", true);
+        // -txindex cannot be combined with pruning (a later check aborts startup
+        // with "Prune mode is incompatible with -txindex"). Since this preset is
+        // also a persisted GUI setting, turning it on for a pruned node would
+        // otherwise make every following startup fail, so skip txindex there.
+        if (args.GetIntArg("-prune", 0)) {
+            LogInfo("parameter interaction: -datum set but -prune is enabled -> not enabling -txindex (incompatible with pruning)\n");
+        } else {
+            args.SoftSetBoolArg("-txindex", true);
+        }
         // Leaves headroom below the ~4,000,000 weight-unit consensus
         // maximum for the pool's coinbase/generation transaction.
         args.SoftSetArg("-blockmaxweight", "3985000");
