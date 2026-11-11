@@ -2,213 +2,823 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
-# Do not use generator expressions in test sources because the
-# SOURCES property is processed to gather test suite macros.
-add_executable(test_bitcoin
-  main.cpp
-  addrman_tests.cpp
-  allocator_tests.cpp
-  amount_tests.cpp
-  argsman_tests.cpp
-  arith_uint256_tests.cpp
-  banman_tests.cpp
-  base32_tests.cpp
-  base58_tests.cpp
-  base64_tests.cpp
-  bech32_tests.cpp
-  bip32_tests.cpp
-  bip324_tests.cpp
-  blockchain_tests.cpp
-  blockencodings_tests.cpp
-  blockfilter_index_tests.cpp
-  blockfilter_tests.cpp
-  blockmanager_tests.cpp
-  bloom_tests.cpp
-  bswap_tests.cpp
-  chainstate_write_tests.cpp
-  checkqueue_tests.cpp
-  cluster_linearize_tests.cpp
-  codex32_tests.cpp
-  coins_tests.cpp
-  coinscachepair_tests.cpp
-  coinstatsindex_tests.cpp
-  common_url_tests.cpp
-  compilerbug_tests.cpp
-  compress_tests.cpp
-  crypto_tests.cpp
-  cuckoocache_tests.cpp
-  dbwrapper_tests.cpp
-  denialofservice_tests.cpp
-  descriptor_tests.cpp
-  disconnected_transactions.cpp
-  feefrac_tests.cpp
-  flatfile_tests.cpp
-  fs_tests.cpp
-  getarg_tests.cpp
-  hash_tests.cpp
-  headers_sync_chainwork_tests.cpp
-  httpserver_tests.cpp
-  i2p_tests.cpp
-  interfaces_tests.cpp
-  key_io_tests.cpp
-  key_tests.cpp
-  logging_tests.cpp
-  mempool_tests.cpp
-  merkle_tests.cpp
-  merkleblock_tests.cpp
-  miner_tests.cpp
-  miniminer_tests.cpp
-  miniscript_tests.cpp
-  multisig_tests.cpp
-  net_peer_connection_tests.cpp
-  net_peer_eviction_tests.cpp
-  net_tests.cpp
-  netbase_tests.cpp
-  node_warnings_tests.cpp
-  orphanage_tests.cpp
-  pcp_tests.cpp
-  peerman_tests.cpp
-  pmt_tests.cpp
-  policy_fee_tests.cpp
-  policyestimator_tests.cpp
-  pool_tests.cpp
-  pow_tests.cpp
-  prevector_tests.cpp
-  raii_event_tests.cpp
-  random_tests.cpp
-  rbf_tests.cpp
-  rest_tests.cpp
-  result_tests.cpp
-  reverselock_tests.cpp
-  rpc_tests.cpp
-  sanity_tests.cpp
-  scheduler_tests.cpp
-  script_p2sh_tests.cpp
-  script_parse_tests.cpp
-  script_segwit_tests.cpp
-  script_standard_tests.cpp
-  script_tests.cpp
-  scriptnum_tests.cpp
-  serfloat_tests.cpp
-  serialize_tests.cpp
-  settings_tests.cpp
-  sighash_tests.cpp
-  sigopcount_tests.cpp
-  skiplist_tests.cpp
-  sock_tests.cpp
-  span_tests.cpp
-  streams_tests.cpp
-  sync_tests.cpp
-  system_tests.cpp
-  timeoffsets_tests.cpp
-  torcontrol_tests.cpp
-  transaction_tests.cpp
-  translation_tests.cpp
-  txdownload_tests.cpp
-  txindex_tests.cpp
-  txpackage_tests.cpp
-  txreconciliation_tests.cpp
-  txrequest_tests.cpp
-  txvalidation_tests.cpp
-  txvalidationcache_tests.cpp
-  uint256_tests.cpp
-  util_string_tests.cpp
-  util_tests.cpp
-  util_threadnames_tests.cpp
-  util_trace_tests.cpp
-  validation_block_tests.cpp
-  validation_chainstate_tests.cpp
-  validation_chainstatemanager_tests.cpp
-  validation_flush_tests.cpp
-  validation_tests.cpp
-  validationinterface_tests.cpp
-  versionbits_tests.cpp
-  ../stats/test/stats_tests.cpp
-)
+# Ubuntu 22.04 LTS Jammy Jellyfish, https://wiki.ubuntu.com/Releases, EOSS in June 2027:
+#  - CMake 3.22.1, https://packages.ubuntu.com/jammy/cmake
+#
+# Centos Stream 9, https://www.centos.org/cl-vs-cs/#end-of-life, EOL in May 2027:
+#  - CMake 3.26.5, https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/
+cmake_minimum_required(VERSION 3.22)
 
-include(TargetDataSources)
-target_json_data_sources(test_bitcoin
-  data/base58_encode_decode.json
-  data/bip341_wallet_vectors.json
-  data/blockfilters.json
-  data/key_io_invalid.json
-  data/key_io_valid.json
-  data/script_tests.json
-  data/sighash.json
-  data/tx_invalid.json
-  data/tx_valid.json
-)
-target_raw_data_sources(test_bitcoin NAMESPACE test::data
-  data/asmap.raw
-)
-
-target_link_libraries(test_bitcoin
-  core_interface
-  test_util
-  $<TARGET_NAME_IF_EXISTS:bitcoinconsensus>
-  bitcoin_cli
-  bitcoin_node
-  bitcoin_consensus
-  secp256k1
-  Boost::headers
-  libevent::extra
-)
-
-if(ENABLE_WALLET)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/src/wallet/test wallet)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
+  message(FATAL_ERROR "In-source builds are not allowed.")
 endif()
 
-if(WITH_MULTIPROCESS)
-  target_link_libraries(bitcoin_ipc_test
-    PRIVATE
-      core_interface
-      univalue
-  )
-
-  target_sources(test_bitcoin
-    PRIVATE
-      ipc_tests.cpp
-  )
-  target_link_libraries(test_bitcoin bitcoin_ipc_test bitcoin_ipc)
+if(POLICY CMP0171)
+  # `codegen` is a reserved target name.
+  # See: https://cmake.org/cmake/help/latest/policy/CMP0171.html
+  cmake_policy(SET CMP0171 NEW)
 endif()
 
-function(add_boost_test source_file)
-  if(NOT EXISTS ${source_file})
-    return()
-  endif()
+# When adjusting CMake flag variables, we must not override those explicitly
+# set by the user. These are a subset of the CACHE_VARIABLES property.
+get_directory_property(precious_variables CACHE_VARIABLES)
 
-  file(READ "${source_file}" source_file_content)
-  string(REGEX
-    MATCH "(BOOST_FIXTURE_TEST_SUITE|BOOST_AUTO_TEST_SUITE)\\(([A-Za-z0-9_]+)"
-    test_suite_macro "${source_file_content}"
-  )
-  string(REGEX
-    REPLACE "(BOOST_FIXTURE_TEST_SUITE|BOOST_AUTO_TEST_SUITE)\\(" ""
-    test_suite_name "${test_suite_macro}"
-  )
-  if(test_suite_name)
-    add_test(NAME ${test_suite_name}
-      COMMAND test_bitcoin --run_test=${test_suite_name} --catch_system_error=no --log_level=test_suite -- DEBUG_LOG_OUT
-    )
-    set_property(TEST ${test_suite_name} PROPERTY
-      SKIP_REGULAR_EXPRESSION "no test cases matching filter"
-    )
-  endif()
-endfunction()
+#=============================
+# Project / Package metadata
+#=============================
+set(CLIENT_NAME "Bit-Block")
+set(CLIENT_VERSION_MAJOR 29)
+set(CLIENT_VERSION_MINOR 1)
+set(CLIENT_VERSION_BUILD 0)
+set(CLIENT_VERSION_RC 0)
+set(CLIENT_VERSION_IS_RELEASE "true")
+set(COPYRIGHT_YEAR "2026")
 
-function(add_all_test_targets)
-  get_target_property(test_source_dir test_bitcoin SOURCE_DIR)
-  get_target_property(test_sources test_bitcoin SOURCES)
-  foreach(test_source ${test_sources})
-    cmake_path(IS_RELATIVE test_source result)
-    if(result)
-      cmake_path(APPEND test_source_dir ${test_source} OUTPUT_VARIABLE test_source)
+# Bit-Block's own release counter, shown to users as "V<n>" in place of the
+# upstream Knots/Core version string (see FormatFullVersion() in
+# clientversion.cpp). Bump this by hand each time a new Bit-Block build is
+# compiled and released -- it is intentionally independent of
+# CLIENT_VERSION_MAJOR/MINOR/BUILD above, which track the upstream base this
+# fork was built from and remain accurate internally (network protocol
+# version string, RPC version fields, etc. are unaffected by this).
+set(BITBLOCK_RELEASE_VERSION "4")
+
+
+# During the enabling of the CXX and CXXOBJ languages, we modify
+# CMake's compiler/linker invocation strings by appending the content
+# of the user-defined `APPEND_*` variables, which allows overriding
+# any flag. We also ensure that the APPEND_* flags are considered
+# during CMake's tests, which use the `try_compile()` command.
+#
+# CMake's docs state that the `CMAKE_TRY_COMPILE_PLATFORM_VARIABLES`
+# variable "is meant to be set by CMake's platform information modules
+# for the current toolchain, or by a toolchain file." We do our best
+# to set it before the `project()` command.
+set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
+  CMAKE_CXX_COMPILE_OBJECT
+  CMAKE_OBJCXX_COMPILE_OBJECT
+  CMAKE_CXX_LINK_EXECUTABLE
+)
+
+project(BitcoinCore
+  VERSION ${CLIENT_VERSION_MAJOR}.${CLIENT_VERSION_MINOR}.${CLIENT_VERSION_BUILD}
+  DESCRIPTION "Bitcoin client software"
+  HOMEPAGE_URL "https://bitcoinknots.org/"
+  LANGUAGES NONE
+)
+
+set(CLIENT_VERSION_STRING ${PROJECT_VERSION}${CLIENT_VERSION_SUFFIX})
+if(CLIENT_VERSION_RC GREATER 0)
+  string(APPEND CLIENT_VERSION_STRING "rc${CLIENT_VERSION_RC}")
+endif()
+
+set(COPYRIGHT_HOLDERS "The %s developers")
+set(COPYRIGHT_HOLDERS_FINAL "The ${CLIENT_NAME} developers")
+set(CLIENT_BUGREPORT "https://github.com/bitcoinknots/bitcoin/issues")
+
+#=============================
+# Language setup
+#=============================
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_HOST_APPLE)
+  # We do not use the install_name_tool when cross-compiling for macOS.
+  # So disable this tool check in further enable_language() commands.
+  set(CMAKE_PLATFORM_HAS_INSTALLNAME FALSE)
+endif()
+enable_language(CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/module)
+include(ProcessConfigurations)
+
+# Flatten static lib dependencies.
+# Without this, if libfoo.a depends on libbar.a, libfoo's objects can't begin
+# to be compiled until libbar.a has been created.
+if (NOT DEFINED CMAKE_OPTIMIZE_DEPENDENCIES)
+  set(CMAKE_OPTIMIZE_DEPENDENCIES TRUE)
+endif()
+
+#=============================
+# Configurable options
+#=============================
+include(CMakeDependentOption)
+# When adding a new option, end the <help_text> with a full stop for consistency.
+option(BUILD_DAEMON "Build bitcoind executable." ON)
+option(BUILD_GUI "Build bitcoin-qt executable." OFF)
+set(WITH_QT_VERSION "5" CACHE STRING "Choose 5 or 6.")
+set_property(CACHE WITH_QT_VERSION PROPERTY STRINGS "5" "6")
+option(BUILD_CLI "Build bitcoin-cli executable." ON)
+option(BUILD_BITCOINCONSENSUS_LIB "Build libbitcoinconsensus library." OFF)
+
+option(BUILD_TESTS "Build test_bitcoin executable." ON)
+option(BUILD_TX "Build bitcoin-tx executable." ${BUILD_TESTS})
+option(BUILD_UTIL "Build bitcoin-util executable." ${BUILD_TESTS})
+
+option(BUILD_UTIL_CHAINSTATE "Build experimental bitcoin-chainstate executable." OFF)
+option(BUILD_KERNEL_LIB "Build experimental bitcoinkernel library." ${BUILD_UTIL_CHAINSTATE})
+
+option(WITH_SYSTEM_LEVELDB "Build with system LevelDB instead of embedded fork." OFF)
+mark_as_advanced(WITH_SYSTEM_LEVELDB)
+if(WITH_SYSTEM_LEVELDB)
+  find_package(LevelDB MODULE REQUIRED)
+endif()  # WITH_SYSTEM_LEVELDB
+
+option(WITH_SYSTEM_LIBSECP256K1 "Build with system libsecp256k1 instead of embedded copy." OFF)
+mark_as_advanced(WITH_SYSTEM_LIBSECP256K1)
+if(WITH_SYSTEM_LIBSECP256K1)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(libsecp256k1 REQUIRED IMPORTED_TARGET libsecp256k1)
+  add_library(secp256k1 ALIAS PkgConfig::libsecp256k1)
+
+  if(NOT (libsecp256k1_HAS_SECP256K1_ELLSWIFT_CREATE AND libsecp256k1_HAS_SECP256K1_XONLY_PUBKEY_PARSE AND libsecp256k1_HAS_SECP256K1_ECDSA_RECOVER AND libsecp256k1_HAS_SECP256K1_SCHNORRSIG_VERIFY))
+    include(CheckSymbolExists)
+    include(CMakePushCheckState)
+    cmake_push_check_state(RESET)
+    string(APPEND CMAKE_REQUIRED_FLAGS " ${libsecp256k1_CFLAGS_OTHER}")
+    list(APPEND CMAKE_REQUIRED_INCLUDES ${libsecp256k1_INCLUDE_DIRS})
+    list(APPEND CMAKE_REQUIRED_LINK_OPTIONS ${libsecp256k1_LDFLAGS})
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${libsecp256k1_LIBRARIES})
+    unset(missing_modules)
+    macro(check_secp256k1_module module symbol)
+      string(TOUPPER "${symbol}" VAR)
+      set(VAR "libsecp256k1_HAS_${VAR}")
+      unset(${VAR})
+      check_symbol_exists("${symbol}" "secp256k1_${module}.h" ${VAR})
+      if(NOT ${VAR})
+        list(APPEND missing_modules "${module}")
+      endif()
+    endmacro()
+    message(CHECK_START "Checking for required libsecp256k1 modules")
+    list(APPEND CMAKE_MESSAGE_INDENT "  ")
+    check_secp256k1_module(ellswift secp256k1_ellswift_create)
+    check_secp256k1_module(extrakeys secp256k1_xonly_pubkey_parse)
+    check_secp256k1_module(recovery secp256k1_ecdsa_recover)
+    check_secp256k1_module(schnorrsig secp256k1_schnorrsig_verify)
+    list(POP_BACK CMAKE_MESSAGE_INDENT)
+    if(missing_modules)
+      list(JOIN missing_modules ", " missing_modules)
+      message(FATAL_ERROR "System-installed libsecp256k1 lacks these required modules: ${missing_modules}.")
     endif()
-    add_boost_test(${test_source})
-  endforeach()
-endfunction()
+    message(CHECK_PASS "all were found")
+    cmake_pop_check_state()
+  endif()
+endif()  # WITH_SYSTEM_LIBSECP256K1
 
-add_all_test_targets()
+option(ENABLE_WALLET "Enable wallet." ON)
+option(WITH_SQLITE "Enable SQLite wallet support." ${ENABLE_WALLET})
+if(WITH_SQLITE)
+  if(VCPKG_TARGET_TRIPLET)
+    # Use of the `unofficial::` namespace is a vcpkg package manager convention.
+    find_package(unofficial-sqlite3 CONFIG REQUIRED)
+  else()
+    find_package(SQLite3 3.7.17 REQUIRED)
+  endif()
+  set(USE_SQLITE ON)
+endif()
+option(WITH_BDB "Enable Berkeley DB (BDB) wallet support." OFF)
+cmake_dependent_option(WARN_INCOMPATIBLE_BDB "Warn when using a Berkeley DB (BDB) version other than 4.8." ON "WITH_BDB" OFF)
+if(WITH_BDB)
+  find_package(BerkeleyDB 4.8 MODULE REQUIRED)
+  set(USE_BDB ON)
+  if(NOT BerkeleyDB_VERSION VERSION_EQUAL 4.8)
+    message(WARNING "Found Berkeley DB (BDB) other than 4.8.\n"
+                    "BDB (legacy) wallets opened by this build will not be portable!"
+    )
+    if(WARN_INCOMPATIBLE_BDB)
+      message(WARNING "If this is intended, pass \"-DWARN_INCOMPATIBLE_BDB=OFF\".\n"
+                      "Passing \"-DWITH_BDB=OFF\" will suppress this warning."
+      )
+    endif()
+  endif()
+endif()
+cmake_dependent_option(BUILD_WALLET_TOOL "Build bitcoin-wallet tool." ${BUILD_TESTS} "ENABLE_WALLET" OFF)
 
-make_libbitcoinconsensus_dll_available(test_bitcoin)
-install_binary_component(test_bitcoin)
+option(ENABLE_HARDENING "Attempt to harden the resulting executables." ON)
+option(REDUCE_EXPORTS "Attempt to reduce exported symbols in the resulting executables." OFF)
+option(WERROR "Treat compiler warnings as errors." OFF)
+option(WITH_CCACHE "Attempt to use ccache for compiling." ON)
+
+option(WITH_MINIUPNPC "Enable UPnP." OFF)
+if(WITH_MINIUPNPC)
+  find_package(MiniUPnPc MODULE REQUIRED)
+endif()
+
+option(WITH_ZMQ "Enable ZMQ notifications." OFF)
+if(WITH_ZMQ)
+  find_package(ZeroMQ 4.0.0 MODULE REQUIRED)
+endif()
+
+option(WITH_USDT "Enable tracepoints for Userspace, Statically Defined Tracing." OFF)
+if(WITH_USDT)
+  find_package(USDT MODULE REQUIRED)
+endif()
+
+option(ENABLE_EXTERNAL_SIGNER "Enable external signer support." ON)
+
+option(ENABLE_TOR_SUBPROCESS "Enable support for executing a dedicated Tor node." ON)
+
+cmake_dependent_option(WITH_QRENCODE "Enable QR code support." ON "BUILD_GUI" OFF)
+if(WITH_QRENCODE)
+  find_package(QRencode MODULE REQUIRED)
+  set(USE_QRCODE TRUE)
+endif()
+
+cmake_dependent_option(WITH_DBUS "Enable DBus support." ON "NOT CMAKE_SYSTEM_NAME MATCHES \"(Windows|Darwin)\" AND BUILD_GUI" OFF)
+
+cmake_dependent_option(WITH_TASKBAR_PROGRESS "Enable GUI taskbar progress." ON "CMAKE_SYSTEM_NAME STREQUAL \"Windows\" AND BUILD_GUI" OFF)
+
+set(WITH_MULTIPROCESS OFF)
+if(WITH_MULTIPROCESS)
+  find_package(Libmultiprocess REQUIRED COMPONENTS Lib)
+  find_package(LibmultiprocessNative REQUIRED COMPONENTS Bin
+    NAMES Libmultiprocess
+  )
+endif()
+
+cmake_dependent_option(BUILD_GUI_TESTS "Build test_bitcoin-qt executable." ON "BUILD_GUI;BUILD_TESTS" OFF)
+if(BUILD_GUI)
+  set(qt_components Core Gui Widgets LinguistTools)
+  if(ENABLE_WALLET)
+    list(APPEND qt_components Network)
+  endif()
+  if(WITH_DBUS)
+    list(APPEND qt_components DBus)
+    set(USE_DBUS TRUE)
+  endif()
+  if(WITH_TASKBAR_PROGRESS)
+    list(APPEND qt_components WinExtras)
+    set(BITCOIN_QT_WIN_TASKBAR TRUE)
+  endif()
+  if(BUILD_GUI_TESTS)
+    list(APPEND qt_components Test)
+  endif()
+  if("${WITH_QT_VERSION}" STREQUAL "6")
+    find_package(Qt 6.2 MODULE REQUIRED
+      COMPONENTS ${qt_components}
+    )
+  else()  # ! Qt 6
+  find_package(Qt 5.11.3 MODULE REQUIRED
+    COMPONENTS ${qt_components}
+  )
+  endif()  # Qt 6
+  unset(qt_components)
+endif()
+
+option(BUILD_BENCH "Build bench_bitcoin executable." OFF)
+option(BUILD_FUZZ_BINARY "Build fuzz binary." OFF)
+option(BUILD_FOR_FUZZING "Build for fuzzing. Enabling this will disable all other targets and override BUILD_FUZZ_BINARY." OFF)
+
+option(INSTALL_MAN "Install man pages." ON)
+
+set(APPEND_CPPFLAGS "" CACHE STRING "Preprocessor flags that are appended to the command line after all other flags added by the build system. This variable is intended for debugging and special builds.")
+set(APPEND_CFLAGS "" CACHE STRING "C compiler flags that are appended to the command line after all other flags added by the build system. This variable is intended for debugging and special builds.")
+set(APPEND_CXXFLAGS "" CACHE STRING "(Objective) C++ compiler flags that are appended to the command line after all other flags added by the build system. This variable is intended for debugging and special builds.")
+set(APPEND_LDFLAGS "" CACHE STRING "Linker flags that are appended to the command line after all other flags added by the build system. This variable is intended for debugging and special builds.")
+# Appending to this low-level rule variables is the only way to
+# guarantee that the flags appear at the end of the command line.
+string(APPEND CMAKE_CXX_COMPILE_OBJECT " ${APPEND_CPPFLAGS} ${APPEND_CXXFLAGS}")
+string(APPEND CMAKE_CXX_CREATE_SHARED_LIBRARY " ${APPEND_LDFLAGS}")
+string(APPEND CMAKE_CXX_LINK_EXECUTABLE " ${APPEND_LDFLAGS}")
+
+set(configure_warnings)
+
+include(CheckLinkerSupportsPIE)
+check_linker_supports_pie(configure_warnings)
+
+# The core_interface library aims to encapsulate common build flags.
+# It is a usage requirement for all targets except for secp256k1, which
+# gets its flags by other means.
+add_library(core_interface INTERFACE)
+add_library(core_interface_relwithdebinfo INTERFACE)
+add_library(core_interface_debug INTERFACE)
+target_link_libraries(core_interface INTERFACE
+  $<$<CONFIG:RelWithDebInfo>:core_interface_relwithdebinfo>
+  $<$<CONFIG:Debug>:core_interface_debug>
+)
+
+if(BUILD_FOR_FUZZING)
+  message(WARNING "BUILD_FOR_FUZZING=ON will disable all other targets and force BUILD_FUZZ_BINARY=ON.")
+  set(BUILD_DAEMON OFF)
+  set(BUILD_CLI OFF)
+  set(BUILD_BITCOINCONSENSUS_LIB OFF)
+  set(BUILD_TX OFF)
+  set(BUILD_UTIL OFF)
+  set(BUILD_UTIL_CHAINSTATE OFF)
+  set(BUILD_KERNEL_LIB OFF)
+  set(BUILD_WALLET_TOOL OFF)
+  set(BUILD_GUI OFF)
+  set(ENABLE_EXTERNAL_SIGNER OFF)
+  set(WITH_MINIUPNPC OFF)
+  set(WITH_ZMQ OFF)
+  set(BUILD_TESTS OFF)
+  set(BUILD_GUI_TESTS OFF)
+  set(BUILD_BENCH OFF)
+  set(BUILD_FUZZ_BINARY ON)
+
+  target_compile_definitions(core_interface INTERFACE
+    FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+  )
+endif()
+
+# The external_lib_interface interface library aims to encapsulate build flags, which
+# are specific to non-internal libraries.
+# It is intended to be a usage requirement for non-internal library
+# targets.
+add_library(external_lib_interface INTERFACE)
+
+include(TryAppendCXXFlags)
+include(TryAppendLinkerFlag)
+
+try_append_linker_flag("-Wl,--no-undefined" TARGET external_lib_interface)
+
+# Redefine/adjust per-configuration flags.
+target_compile_definitions(core_interface_debug INTERFACE
+  DEBUG
+  DEBUG_LOCKORDER
+  DEBUG_LOCKCONTENTION
+  RPC_DOC_CHECK
+  ABORT_ON_FAILED_ASSUME
+)
+
+if(WIN32)
+  #[=[
+  This build system supports two ways to build binaries for Windows.
+
+  1. Building on Windows using MSVC.
+  Implementation notes:
+  - /DWIN32 and /D_WINDOWS definitions are included into the CMAKE_CXX_FLAGS_INIT
+    and CMAKE_CXX_FLAGS_INIT variables by default.
+  - A run-time library is selected using the CMAKE_MSVC_RUNTIME_LIBRARY variable.
+  - MSVC-specific options, for example, /Zc:__cplusplus, are additionally required.
+
+  2. Cross-compiling using MinGW.
+  Implementation notes:
+  - WIN32 and _WINDOWS definitions must be provided explicitly.
+  - A run-time library must be specified explicitly using _MT definition.
+  ]=]
+
+  target_compile_definitions(core_interface INTERFACE
+    _WIN32_WINNT=0x0A00
+    _WIN32_IE=0x0A00
+    WIN32_LEAN_AND_MEAN
+    NOMINMAX
+  )
+
+  if(MSVC)
+    if(VCPKG_TARGET_TRIPLET MATCHES "-static")
+      set(msvc_library_linkage "")
+    else()
+      set(msvc_library_linkage "DLL")
+    endif()
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>${msvc_library_linkage}")
+    unset(msvc_library_linkage)
+
+    target_compile_definitions(core_interface INTERFACE
+      _UNICODE;UNICODE
+    )
+    target_compile_options(core_interface INTERFACE
+      /utf-8
+      /Zc:preprocessor
+      /Zc:__cplusplus
+      /sdl
+    )
+    # Improve parallelism in MSBuild.
+    # See: https://devblogs.microsoft.com/cppblog/improved-parallelism-in-msbuild/.
+    list(APPEND CMAKE_VS_GLOBALS "UseMultiToolTask=true")
+  endif()
+
+  if(MINGW)
+    target_compile_definitions(core_interface INTERFACE
+      WIN32
+      _WINDOWS
+      _MT
+    )
+    # Avoid the use of aligned vector instructions when building for Windows.
+    # See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412.
+    try_append_cxx_flags("-Wa,-muse-unaligned-vector-move" TARGET core_interface SKIP_LINK)
+    try_append_linker_flag("-static" TARGET core_interface)
+    # We support Windows 10+, however it's not possible to set these values accordingly,
+    # due to a bug in mingw-w64. See https://sourceforge.net/p/mingw-w64/bugs/968/.
+    # As a best effort, target Windows 8.
+    try_append_linker_flag("-Wl,--major-subsystem-version,6" TARGET core_interface)
+    try_append_linker_flag("-Wl,--minor-subsystem-version,2" TARGET core_interface)
+
+    find_library(MINGWTHRD_LIBRARY mingwthrd)
+    if (MINGWTHRD_LIBRARY)
+      target_link_libraries(core_interface INTERFACE
+        ${MINGWTHRD_LIBRARY}
+      )
+    endif()
+  endif()
+
+  # Workaround producing large object files, which cannot be handled by the assembler.
+  # More likely to happen with no, or lower levels of optimisation.
+  # See discussion in https://github.com/bitcoin/bitcoin/issues/28109.
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    try_append_cxx_flags("/bigobj" TARGET core_interface_debug SKIP_LINK)
+  else()
+    try_append_cxx_flags("-Wa,-mbig-obj" TARGET core_interface_debug SKIP_LINK)
+  endif()
+endif()
+
+# Use 64-bit off_t on 32-bit Linux.
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+  # Ensure 64-bit offsets are used for filesystem accesses for 32-bit compilation.
+  target_compile_definitions(core_interface INTERFACE
+    _FILE_OFFSET_BITS=64
+  )
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  target_compile_definitions(core_interface INTERFACE OBJC_OLD_DISPATCH_PROTOTYPES=0)
+  # These flags are specific to ld64, and may cause issues with other linkers.
+  # For example: GNU ld will interpret -dead_strip as -de and then try and use
+  # "ad_strip" as the symbol for the entry point.
+  try_append_linker_flag("-Wl,-dead_strip" TARGET core_interface)
+  try_append_linker_flag("-Wl,-dead_strip_dylibs" TARGET core_interface)
+  if(CMAKE_HOST_APPLE)
+    try_append_linker_flag("-Wl,-headerpad_max_install_names" TARGET core_interface)
+  endif()
+endif()
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(core_interface INTERFACE
+  Threads::Threads
+)
+
+add_library(sanitize_interface INTERFACE)
+target_link_libraries(core_interface INTERFACE sanitize_interface)
+if(SANITIZERS)
+  # First check if the compiler accepts flags. If an incompatible pair like
+  # -fsanitize=address,thread is used here, this check will fail. This will also
+  # fail if a bad argument is passed, e.g. -fsanitize=undfeined
+  try_append_cxx_flags("-fsanitize=${SANITIZERS}" TARGET sanitize_interface
+    RESULT_VAR cxx_supports_sanitizers
+    SKIP_LINK
+  )
+  if(NOT cxx_supports_sanitizers)
+    message(FATAL_ERROR "Compiler did not accept requested flags.")
+  endif()
+
+  # Some compilers (e.g. GCC) require additional libraries like libasan,
+  # libtsan, libubsan, etc. Make sure linking still works with the sanitize
+  # flag. This is a separate check so we can give a better error message when
+  # the sanitize flags are supported by the compiler but the actual sanitizer
+  # libs are missing.
+  try_append_linker_flag("-fsanitize=${SANITIZERS}" VAR SANITIZER_LDFLAGS
+    SOURCE "
+      #include <cstdint>
+      #include <cstddef>
+      extern \"C\" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) { return 0; }
+      __attribute__((weak)) // allow for libFuzzer linking
+      int main() { return 0; }
+    "
+    RESULT_VAR linker_supports_sanitizers
+    NO_CACHE_IF_FAILED
+  )
+  if(NOT linker_supports_sanitizers)
+    message(FATAL_ERROR "Linker did not accept requested flags, you are missing required libraries.")
+  endif()
+endif()
+target_link_options(sanitize_interface INTERFACE ${SANITIZER_LDFLAGS})
+
+if(BUILD_FUZZ_BINARY)
+  target_link_libraries(core_interface INTERFACE ${FUZZ_LIBS})
+  include(CheckSourceCompilesWithFlags)
+  check_cxx_source_compiles_with_flags("
+      #include <cstdint>
+      #include <cstddef>
+      extern \"C\" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) { return 0; }
+      // No main() function.
+    " FUZZ_BINARY_LINKS_WITHOUT_MAIN_FUNCTION
+    LDFLAGS ${SANITIZER_LDFLAGS}
+    LINK_LIBRARIES ${FUZZ_LIBS}
+  )
+endif()
+
+include(AddBoostIfNeeded)
+add_boost_if_needed()
+
+if(BUILD_DAEMON OR BUILD_GUI OR BUILD_CLI OR BUILD_TESTS OR BUILD_BENCH OR BUILD_FUZZ_BINARY)
+  find_package(Libevent 2.1.8 MODULE REQUIRED)
+endif()
+
+include(cmake/iopriority.cmake)
+
+include(cmake/introspection.cmake)
+
+include(cmake/mempressure.cmake)
+
+include(cmake/ccache.cmake)
+
+add_library(warn_interface INTERFACE)
+target_link_libraries(core_interface INTERFACE warn_interface)
+if(MSVC)
+  try_append_cxx_flags("/W3" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("/wd4018" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("/wd4146" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("/wd4244" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("/wd4267" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("/wd4715" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("/wd4805" TARGET warn_interface SKIP_LINK)
+  target_compile_definitions(warn_interface INTERFACE
+    _CRT_SECURE_NO_WARNINGS
+    _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+  )
+else()
+  try_append_cxx_flags("-Wall" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wextra" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wgnu" TARGET warn_interface SKIP_LINK)
+  # Some compilers will ignore -Wformat-security without -Wformat, so just combine the two here.
+  try_append_cxx_flags("-Wformat -Wformat-security" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wvla" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wshadow-field" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wthread-safety" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wloop-analysis" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wredundant-decls" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wunused-member-function" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wdate-time" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wconditional-uninitialized" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wduplicated-branches" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wduplicated-cond" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wlogical-op" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Woverloaded-virtual" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wsuggest-override" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wimplicit-fallthrough" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wunreachable-code-loop-increment" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wdocumentation" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wself-assign" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wbidi-chars=any" TARGET warn_interface SKIP_LINK)
+  try_append_cxx_flags("-Wundef" TARGET warn_interface SKIP_LINK)
+
+  # Some compilers (gcc) ignore unknown -Wno-* options, but warn about all
+  # unknown options if any other warning is produced. Test the -Wfoo case, and
+  # set the -Wno-foo case if it works.
+  try_append_cxx_flags("-Wunused-parameter" TARGET warn_interface SKIP_LINK
+    IF_CHECK_PASSED "-Wno-unused-parameter"
+  )
+endif()
+
+configure_file(cmake/script/Coverage.cmake Coverage.cmake USE_SOURCE_PERMISSIONS COPYONLY)
+configure_file(cmake/script/CoverageFuzz.cmake CoverageFuzz.cmake USE_SOURCE_PERMISSIONS COPYONLY)
+configure_file(cmake/script/CoverageInclude.cmake.in CoverageInclude.cmake USE_SOURCE_PERMISSIONS @ONLY)
+configure_file(cmake/script/cov_tool_wrapper.sh.in cov_tool_wrapper.sh.in USE_SOURCE_PERMISSIONS COPYONLY)
+configure_file(contrib/filter-lcov.py filter-lcov.py USE_SOURCE_PERMISSIONS COPYONLY)
+
+# Don't allow extended (non-ASCII) symbols in identifiers. This is easier for code review.
+try_append_cxx_flags("-fno-extended-identifiers" TARGET core_interface SKIP_LINK)
+
+# Avoiding the `-ffile-prefix-map` compiler option because it implies
+# `-fcoverage-prefix-map` on Clang or `-fprofile-prefix-map` on GCC,
+# which can cause issues with coverage builds, particularly when using
+# Clang in the OSS-Fuzz environment due to its use of other options
+# and a third party script, or with GCC.
+try_append_cxx_flags("-fdebug-prefix-map=A=B" TARGET core_interface SKIP_LINK
+  IF_CHECK_PASSED "-fdebug-prefix-map=${PROJECT_SOURCE_DIR}/src=."
+)
+try_append_cxx_flags("-fmacro-prefix-map=A=B" TARGET core_interface SKIP_LINK
+  IF_CHECK_PASSED "-fmacro-prefix-map=${PROJECT_SOURCE_DIR}/src=."
+)
+
+# Currently all versions of gcc are subject to a class of bugs, see the
+# gccbug_90348 test case (only reproduces on GCC 11 and earlier) and
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111843. To work around that, set
+# -fstack-reuse=none for all gcc builds. (Only gcc understands this flag).
+try_append_cxx_flags("-fstack-reuse=none" TARGET core_interface)
+
+if(ENABLE_HARDENING)
+  add_library(hardening_interface INTERFACE)
+  target_link_libraries(core_interface INTERFACE hardening_interface)
+  if(MSVC)
+    try_append_linker_flag("/DYNAMICBASE" TARGET hardening_interface)
+    try_append_linker_flag("/HIGHENTROPYVA" TARGET hardening_interface)
+    try_append_linker_flag("/NXCOMPAT" TARGET hardening_interface)
+  else()
+
+    # _FORTIFY_SOURCE requires that there is some level of optimization,
+    # otherwise it does nothing and just creates a compiler warning.
+    try_append_cxx_flags("-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"
+      RESULT_VAR cxx_supports_fortify_source
+      SOURCE "int main() {
+              # if !defined __OPTIMIZE__ || __OPTIMIZE__ <= 0
+                #error
+              #endif
+              }"
+    )
+    if(cxx_supports_fortify_source)
+      target_compile_options(hardening_interface INTERFACE
+        -U_FORTIFY_SOURCE
+        -D_FORTIFY_SOURCE=3
+      )
+    endif()
+    unset(cxx_supports_fortify_source)
+
+    try_append_cxx_flags("-Wstack-protector" TARGET hardening_interface SKIP_LINK)
+    try_append_cxx_flags("-fstack-protector-all" TARGET hardening_interface)
+    try_append_cxx_flags("-fcf-protection=full" TARGET hardening_interface)
+
+    if(MINGW)
+      # stack-clash-protection is a no-op for Windows.
+      # See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90458 for more details.
+    else()
+      try_append_cxx_flags("-fstack-clash-protection" TARGET hardening_interface)
+    endif()
+
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+      if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        try_append_cxx_flags("-mbranch-protection=bti" TARGET hardening_interface SKIP_LINK)
+      else()
+        try_append_cxx_flags("-mbranch-protection=standard" TARGET hardening_interface SKIP_LINK)
+      endif()
+    endif()
+
+    try_append_linker_flag("-Wl,--enable-reloc-section" TARGET hardening_interface)
+    try_append_linker_flag("-Wl,--dynamicbase" TARGET hardening_interface)
+    try_append_linker_flag("-Wl,--nxcompat" TARGET hardening_interface)
+    try_append_linker_flag("-Wl,--high-entropy-va" TARGET hardening_interface)
+    try_append_linker_flag("-Wl,-z,relro" TARGET hardening_interface)
+    try_append_linker_flag("-Wl,-z,now" TARGET hardening_interface)
+    try_append_linker_flag("-Wl,-z,separate-code" TARGET hardening_interface)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+      try_append_linker_flag("-Wl,-fixup_chains" TARGET hardening_interface)
+    endif()
+  endif()
+endif()
+
+if(REDUCE_EXPORTS)
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+  try_append_linker_flag("-Wl,--exclude-libs,ALL" TARGET core_interface)
+  try_append_linker_flag("-Wl,-no_exported_symbols" VAR CMAKE_EXE_LINKER_FLAGS)
+endif()
+
+if(WERROR)
+  if(MSVC)
+    set(werror_flag "/WX")
+  else()
+    set(werror_flag "-Werror")
+  endif()
+  try_append_cxx_flags(${werror_flag} TARGET core_interface SKIP_LINK RESULT_VAR compiler_supports_werror)
+  if(NOT compiler_supports_werror)
+    message(FATAL_ERROR "WERROR set but ${werror_flag} is not usable.")
+  endif()
+  unset(werror_flag)
+endif()
+
+if(BUILD_BITCOINCONSENSUS_LIB)
+  set(HAVE_CONSENSUS_LIB TRUE)
+endif()
+
+# Prefer Unix-style package components over frameworks on macOS.
+# This improves compatibility with Python version managers.
+set(Python3_FIND_FRAMEWORK LAST CACHE STRING "")
+# Search for generic names before more specialized ones. This
+# improves compatibility with Python version managers that use shims.
+set(Python3_FIND_UNVERSIONED_NAMES FIRST CACHE STRING "")
+mark_as_advanced(Python3_FIND_FRAMEWORK Python3_FIND_UNVERSIONED_NAMES)
+if(BUILD_GUI)
+  find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter)
+else()
+find_package(Python3 3.10 COMPONENTS Interpreter)
+endif()
+if(Python3_EXECUTABLE)
+  set(PYTHON_COMMAND ${Python3_EXECUTABLE})
+else()
+  list(APPEND configure_warnings
+    "Minimum required Python not found. Utils and rpcauth tests are disabled."
+  )
+endif()
+
+if(BUILD_GUI)
+  find_program(RSVG_CONVERT rsvg-convert REQUIRED)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    find_program(IMAGEMAGICK_CONVERT NAMES magick convert)
+    find_program(PNG2ICNS png2icns REQUIRED)
+  else()
+    find_program(IMAGEMAGICK_CONVERT NAMES magick convert REQUIRED)
+    find_program(PNG2ICNS png2icns)
+  endif()
+endif()
+
+target_compile_definitions(core_interface INTERFACE ${DEPENDS_COMPILE_DEFINITIONS})
+target_compile_definitions(core_interface_relwithdebinfo INTERFACE ${DEPENDS_COMPILE_DEFINITIONS_RELWITHDEBINFO})
+target_compile_definitions(core_interface_debug INTERFACE ${DEPENDS_COMPILE_DEFINITIONS_DEBUG})
+
+# If the {CXX,LD}FLAGS environment variables are defined during building depends
+# and configuring this build system, their content might be duplicated.
+if(DEFINED ENV{CXXFLAGS})
+  deduplicate_flags(CMAKE_CXX_FLAGS)
+endif()
+if(DEFINED ENV{LDFLAGS})
+  deduplicate_flags(CMAKE_EXE_LINKER_FLAGS)
+endif()
+
+if(BUILD_TESTS)
+  enable_testing()
+endif()
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.29)
+  # have "make test" depend on "make all"
+  set(CMAKE_SKIP_TEST_ALL_DEPENDENCY FALSE)
+endif()
+
+# TODO: The `CMAKE_SKIP_BUILD_RPATH` variable setting can be deleted
+#       in the future after reordering Guix script commands to
+#       perform binary checks after the installation step.
+# Relevant discussions:
+# - https://github.com/hebasto/bitcoin/pull/236#issuecomment-2183120953
+# - https://github.com/bitcoin/bitcoin/pull/30312#issuecomment-2191235833
+# NetBSD always requires runtime paths to be set for executables.
+if(CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+else()
+  set(CMAKE_SKIP_INSTALL_RPATH TRUE)
+endif()
+add_subdirectory(test)
+add_subdirectory(doc)
+
+add_subdirectory(src)
+
+include(cmake/tests.cmake)
+
+include(Maintenance)
+setup_split_debug_script()
+add_maintenance_targets()
+add_windows_deploy_target()
+add_macos_deploy_target()
+
+message("\n")
+message("Configure summary")
+message("=================")
+message("Executables:")
+message("  bitcoind ............................ ${BUILD_DAEMON}")
+if(BUILD_DAEMON AND WITH_MULTIPROCESS)
+  set(bitcoin_daemon_status ON)
+else()
+  set(bitcoin_daemon_status OFF)
+endif()
+if(BUILD_GUI)
+  if("${WITH_QT_VERSION}" STREQUAL "6")
+    set(bitcoin_qt_status "ON (Qt 6)")
+  else()
+    set(bitcoin_qt_status "ON (Qt 5)")
+  endif()
+else()
+  set(bitcoin_qt_status "OFF")
+endif()
+message("  bitcoin-qt (GUI) .................... ${bitcoin_qt_status}")
+if(BUILD_GUI AND WITH_MULTIPROCESS)
+  set(bitcoin_gui_status ON)
+else()
+  set(bitcoin_gui_status OFF)
+endif()
+message("  bitcoin-cli ......................... ${BUILD_CLI}")
+message("  libbitcoinconsensus ................. ${BUILD_BITCOINCONSENSUS_LIB}")
+message("  bitcoin-tx .......................... ${BUILD_TX}")
+message("  bitcoin-util ........................ ${BUILD_UTIL}")
+message("  bitcoin-wallet ...................... ${BUILD_WALLET_TOOL}")
+message("  bitcoin-chainstate (experimental) ... ${BUILD_UTIL_CHAINSTATE}")
+message("  libbitcoinkernel (experimental) ..... ${BUILD_KERNEL_LIB}")
+message("Optional features:")
+message("  wallet support ...................... ${ENABLE_WALLET}")
+if(ENABLE_WALLET)
+  message("   - descriptor wallets (SQLite) ...... ${WITH_SQLITE}")
+  message("   - legacy wallets (Berkeley DB) ..... ${WITH_BDB}")
+endif()
+message("  external signer ..................... ${ENABLE_EXTERNAL_SIGNER}")
+message("  tor subprocess ...................... ${ENABLE_TOR_SUBPROCESS}")
+message("  port mapping using UPnP ............. ${WITH_MINIUPNPC}")
+message("  ZeroMQ .............................. ${WITH_ZMQ}")
+message("  USDT tracing ........................ ${WITH_USDT}")
+message("  QR code (GUI) ....................... ${WITH_QRENCODE}")
+message("  DBus (GUI) .......................... ${WITH_DBUS}")
+message("Tests:")
+message("  test_bitcoin ........................ ${BUILD_TESTS}")
+message("  test_bitcoin-qt ..................... ${BUILD_GUI_TESTS}")
+message("  bench_bitcoin ....................... ${BUILD_BENCH}")
+message("  fuzz binary ......................... ${BUILD_FUZZ_BINARY}")
+message("")
+if(CMAKE_CROSSCOMPILING)
+  set(cross_status "TRUE, for ${CMAKE_SYSTEM_NAME}, ${CMAKE_SYSTEM_PROCESSOR}")
+else()
+  set(cross_status "FALSE")
+endif()
+message("Cross compiling ....................... ${cross_status}")
+message("C++ compiler .......................... ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}, ${CMAKE_CXX_COMPILER}")
+include(FlagsSummary)
+flags_summary()
+message("Attempt to harden executables ......... ${ENABLE_HARDENING}")
+message("Treat compiler warnings as errors ..... ${WERROR}")
+message("Use ccache for compiling .............. ${WITH_CCACHE}")
+message("\n")
+if(configure_warnings)
+    message("  ******\n")
+    foreach(warning IN LISTS configure_warnings)
+      message(WARNING "${warning}")
+    endforeach()
+    message("  ******\n")
+endif()
+
+# We want all build properties to be encapsulated properly.
+include(WarnAboutGlobalProperties)
