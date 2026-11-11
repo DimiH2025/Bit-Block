@@ -14,6 +14,7 @@
 #include <crypto/sha256.h>
 #include <init.h>
 #include <init/common.h>
+#include <policy/antispam.h>
 #include <interfaces/chain.h>
 #include <kernel/mempool_entry.h>
 #include <logging.h>
@@ -110,6 +111,17 @@ static void ExitFailure(std::string_view str_err)
 BasicTestingSetup::BasicTestingSetup(const ChainType chainType, TestOpts opts)
     : m_args{}
 {
+    // Bit-Block: the seven anti-spam relay rules are ON by default in the node.
+    // The inherited upstream tests assume stock relay policy, so every test starts
+    // with them OFF; antispam_tests.cpp turns them on explicitly where it needs them.
+    g_antispam_limit_scriptpubkey_size = false;
+    g_antispam_limit_pushdata_size = false;
+    g_antispam_reject_undefined_witness_version = false;
+    g_antispam_reject_taproot_annex = false;
+    g_antispam_limit_control_block_size = false;
+    g_antispam_reject_op_success = false;
+    g_antispam_reject_tapscript_if = false;
+
     if constexpr (!G_FUZZING) {
         SeedRandomForTest(SeedRand::FIXED_SEED);
     }
