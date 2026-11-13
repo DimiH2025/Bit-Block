@@ -32,8 +32,28 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          # The runner's default Ubuntu mirror (azure.archive.ubuntu.com) is
+          # sometimes unreachable. Retry, and fall back to archive.ubuntu.com.
+          apt_retry() {
+            for attempt in 1 2 3 4; do
+              if sudo apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 "$@"; then
+                return 0
+              fi
+              echo "apt-get $1 failed (attempt $attempt/4)"
+              if [ "$attempt" = 2 ]; then
+                echo "Switching to archive.ubuntu.com"
+                echo "https://archive.ubuntu.com/ubuntu/ priority:1" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+                for f in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
+                  [ -f "$f" ] && sudo sed -i -E 's#https?://azure\.archive\.ubuntu\.com/ubuntu/?#https://archive.ubuntu.com/ubuntu/#g' "$f"
+                done
+              fi
+              sleep $((attempt * 15))
+              [ "$1" = install ] && sudo apt-get update || true
+            done
+            return 1
+          }
+          apt_retry update
+          apt_retry install -y \
             cmake curl make patch \
             bison g++ pkgconf python3 xz-utils \
             g++-mingw-w64-x86-64-posix \
