@@ -42,6 +42,12 @@ jobs:
           mkdir -p .startos
           cp ~/.startos/id.key.pem .startos/build.key.pem
 
+      # Shows the real error if the package folder is incomplete (make hides it).
+      - name: Check package files
+        run: |
+          ls -la
+          start-cli s9pk list-ingredients
+
       - name: Build (make ${{ matrix.target }})
         env:
           # Skip the local formatting step, as Start9's own CI does.
