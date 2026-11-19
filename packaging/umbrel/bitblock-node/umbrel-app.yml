@@ -1,0 +1,41 @@
+manifestVersion: 1
+id: bitblock-node
+name: Bit-Block + DATUM
+tagline: A Bitcoin full node with a DATUM gateway for mining on your own block templates
+category: Bitcoin
+version: "4.0.0"
+port: 7152
+description: >-
+  Bit-Block is a Bitcoin full node that follows the main Bitcoin chain and lets
+  you set your own relay policy. This app runs it together with the DATUM
+  gateway from OCEAN, so a home miner can point a rig at this device and mine
+  on a block template built by their own node.
+
+
+  Open the app, sign in to the gateway dashboard with the password shown on the
+  app page, and enter your payout address. Then point your miners at
+  stratum+tcp://<this device>:23334 with any worker name.
+
+
+  Mining at home is a lottery: one rig has a very small chance of finding a
+  block. With DATUM pooled mining, payouts come from the pool according to its
+  rules.
+
+
+  Notes: the first sync downloads the full blockchain and needs a large SSD.
+  This app uses the same network ports as the Bitcoin Node app, so do not run
+  both at the same time. The node keeps its own transaction index, which DATUM
+  needs, so it cannot run pruned.
+developer: Bit-Block
+website: https://github.com/DimiH2025/Bit-Block
+dependencies: []
+repo: https://github.com/DimiH2025/Bit-Block
+support: https://github.com/DimiH2025/Bit-Block/issues
+gallery: []
+releaseNotes: >-
+  First release of the Bit-Block and DATUM app, based on Bit-Block V4.
+path: ""
+defaultUsername: ""
+deterministicPassword: true
+submitter: Bit-Block
+submission: https://github.com/DimiH2025/Bit-Block
