@@ -1,37 +1,58 @@
-# Bit-Block appliance packages (Umbrel and StartOS)
+# Bit-Block for StartOS
 
-Bit-Block node plus the OCEAN DATUM gateway, packaged for home servers.
+[Bit-Block](https://github.com/DimiH2025/Bit-Block) is a Bitcoin full node with a GUI and local anti-spam relay policy. This StartOS package runs the node together with the [OCEAN DATUM gateway](https://github.com/OCEAN-xyz/datum_gateway), so a home miner can mine on block templates built by their own node.
+
+This is a test release.
+
+## What you need
+
+- A server running **StartOS 0.4**: a normal PC or mini PC (x86), or a **Raspberry Pi** (ARM).
+- A large SSD for the blockchain. The first sync downloads the whole chain and takes days.
+- The `.s9pk` file for your hardware:
+
+| Hardware | File |
+|----------|------|
+| PC or mini PC (Intel/AMD) | `bit-block_x86_64.s9pk` |
+| Raspberry Pi | `bit-block_aarch64.s9pk` |
+
+Get the files from the maintainer, or download them from the **Artifacts** section of the "Build StartOS package (.s9pk)" run in this repository's Actions tab (`bit-block-s9pk-x86` and `bit-block-s9pk-arm`). Each artifact is a zip file: unzip it first to get the `.s9pk`.
+
+## Install
+
+1. Open the StartOS web interface of your server in a browser.
+2. Go to **Sideload** and upload the `.s9pk` file for your hardware.
+3. Click **Install**, then **Start**.
+4. Open the service and run the action **Show dashboard password**. Write the password down.
+5. Open the **Dashboard** interface and sign in with that password.
+6. Run the action **Set payout address** and enter your payout address.
+
+## Raspberry Pi
+
+- Install StartOS on the Pi first, following the instructions on [start9.com](https://start9.com). Use a Pi 4 or 5 with a good SSD, not an SD card, for the blockchain.
+- Use the `bit-block_aarch64.s9pk` file.
+- Syncing on a Pi is slow. Expect it to take longer than on a PC.
+
+## Mining
+
+Point your miner at:
+
+`stratum+tcp://<your server address>:23334`
+
+Use any worker name. Mining at home is a lottery: one rig has a very small chance of finding a block. With DATUM pooled mining, payouts come from the pool according to its rules.
+
+## Good to know
+
+- The node cannot run pruned, because DATUM needs the transaction index.
+- Do not run it together with another Bitcoin node service that uses the same ports.
+- If something does not work, send the service **Logs** from StartOS together with a description of what you did: https://github.com/DimiH2025/Bit-Block/issues
+
+## Building the package yourself
+
+Requirements: Docker, Node.js and `start-cli`.
 
 ```
-packaging/
-  docker/bit-block-node/   node image (headless bitcoind, DATUM preset, generated RPC credentials)
-  docker/datum-gateway/    gateway image (pinned upstream tag, config rendered at start)
-  umbrel/                  Umbrel community app store (goes in its own repository)
-  start9/                  StartOS package (goes in its own repository)
-.github/workflows/docker-images.yml   builds and publishes both images for amd64 and arm64
+npm install
+make x86      # or: make arm
 ```
 
-## How the pieces fit
-
-- The node container writes its RPC login to a small shared folder. The gateway container reads it from there. No password is typed or stored in a command line.
-- The gateway runs with its dashboard editing enabled, so the payout address can be entered in the dashboard (Umbrel) or through an action (StartOS).
-- Only the stratum port (23334) and the peer port (8333) are published. RPC stays inside the app.
-
-## Release steps
-
-1. Publish the Bit-Block release (for example `V4`).
-2. Run the workflow **Container images (Umbrel / StartOS)** with the same tag. In the repository settings, make the two packages public (Packages, then Package settings, then Change visibility), or the home servers cannot pull them.
-3. **Umbrel:** create a repository named for example `bitblock-umbrel-store`. Put the contents of `packaging/umbrel/` at its root. In umbrelOS, open App Store, Community App Stores, and add the repository URL.
-4. **StartOS:** create a repository `bit-block-startos` from `packaging/start9/`, run `npm install` and `make x86` (or `make arm`), then sideload the `.s9pk`.
-5. For each new Bit-Block release, change the image tag in the Umbrel `docker-compose.yml` and the StartOS `manifest`, and bump the app versions.
-
-## Status
-
-Written and checked as far as the sandbox allowed:
-
-- Shell scripts: syntax checked; the gateway config rendering was run and keeps a saved payout address across restarts.
-- DATUM gateway `v0.5.1beta` built from source and started with the rendered config: it serves its dashboard with the placeholder address.
-- StartOS package: type-checked against `@start9labs/start-sdk` 4.0.0.
-- Not tested: building the Docker images, the multi-arch workflow, installing on a real Umbrel or StartOS, and an actual mining session. Expect small fixes on the first real install.
-
-Points to verify on a real Umbrel: that `deterministicPassword` provides `APP_PASSWORD` as assumed, that the shipped `data/` folders end up writable by user 1000, and that publishing port 8333 does not clash with other apps.
+Or run the GitHub workflow **Build StartOS package (.s9pk)**. The package uses the container images `ghcr.io/dimih2025/bit-block-node` and `ghcr.io/dimih2025/datum-gateway`, which are built by `.github/workflows/docker-images.yml`. For every release, update the image tags in `startos/manifest/index.ts` and the version in `startos/versions/current.ts`.
