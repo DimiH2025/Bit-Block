@@ -45,7 +45,13 @@ remove this directory from version control and add `bin/` to `.gitignore`.
 | `attached_assets/` | Miscellaneous uploaded assets (currently a logo image) not wired into the build. |
 | `scripts/` | **Bit-Block-specific.** Plain shell entry points for local setup/smoke-testing — see below. |
 | `run.sh` | **Bit-Block-specific.** Root-level convenience entry point; hands off to `scripts/`. |
-| `packaging/` | **Bit-Block-specific.** Container images and appliance packages: `docker/` (node image and DATUM gateway image), `umbrel/` (Umbrel community app store, to be published as its own repository), `start9/` (StartOS package, likewise). Built and published by `.github/workflows/docker-images.yml`. See `packaging/README.md`. |
+| `packaging/` | **Bit-Block-specific.** Container images and appliance packages for home servers, in the folders below. The two images are built and published by `.github/workflows/docker-images.yml`; the StartOS package is built by `.github/workflows/build-startos.yml`. See `packaging/README.md`. |
+| `packaging/docker/bit-block-node/` | Image for the headless node (`Dockerfile`, `entrypoint.sh`, `healthcheck.sh`): builds `bitcoind` from this repository, applies the DATUM preset, generates RPC credentials and writes them to a shared folder for the gateway. |
+| `packaging/docker/datum-gateway/` | Image for the OCEAN DATUM gateway (pinned upstream release built from source). `entrypoint.sh` renders the gateway configuration at start and keeps a saved payout address across restarts. |
+| `packaging/umbrel/` | Umbrel community app store (`umbrel-app-store.yml`, `bitblock-node/umbrel-app.yml`, `docker-compose.yml`, empty `data/` folders). It is published as its own repository, `bitblock-umbrel-store`; this folder is the source copy. |
+| `packaging/start9/` | StartOS 0.4 package: TypeScript sources in `startos/` (manifest, main daemons, interfaces, actions for the payout address and the dashboard password, backups, versions), plus `Makefile`, `package.json`, `icon.svg`, `instructions.md`, `LICENSE` and an `assets/` placeholder folder that the packaging tool requires. Its `README.md` explains install and use on a PC or a Raspberry Pi. |
+| `UPSTREAM.md` | **Bit-Block-specific.** Tracks the upstream base (Bitcoin Knots v29.1.knots20250903) and lists every upstream fix ported by hand, every change deliberately not ported, and the known test failures inherited from the base. See the section on upstream fixes below. |
+| `Bit-Block-Dice-Roll-Seed-Guide.md` | **Bit-Block-specific.** User guide for creating a seed phrase from physical dice rolls with the `mnemonicfromdice` RPC, including how to check the result and security advice. |
 | `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `INSTALL.md`, `COPYING` | Standard project documentation: what this is, how to contribute, how to report vulnerabilities, how to install, and the MIT license text. |
 | `CMakeLists.txt`, `CMakePresets.json`, `configure.ac`, `Makefile.am`, `autogen.sh` | Build system entry points. **CMake is the build system actually used** (see `cmake/` and every `CMakeLists.txt` under `src/`). The `configure.ac`/`Makefile.am`/`autogen.sh` autotools files are legacy leftovers not used to build this project — see the note in the FAQ below. |
 | `vcpkg.json` | Dependency manifest used only by the Windows MSVC (Visual Studio) build path — an alternative to `depends/` for that specific toolchain. |
@@ -90,10 +96,11 @@ was forked from. Everything *not* listed here is inherited, shared code.
 
 | File(s) | Purpose |
 |---|---|
-| `.github/workflows/build-windows.yml` | Cross-compiles a Windows installer (`bit-block-win64-setup.exe`) via mingw-w64 + NSIS, runs on GitHub's servers. |
-| `.github/workflows/build-linux.yml` | Native Linux build (no cross-compile toolchain needed, GUI enabled), packaged as `bit-block-V<version>-x86_64-linux-gnu.tar.gz`; the version is read from `BITBLOCK_RELEASE_VERSION` in `CMakeLists.txt`. |
+| `.github/workflows/build-windows.yml` | Cross-compiles a Windows installer (`bit-block-win64-setup.exe`) via mingw-w64 + NSIS, runs on GitHub's servers. Retries the system-package and dependency downloads (with a fallback Ubuntu mirror) and caches the downloaded dependency sources, because the upstream download sites are sometimes unreachable. |
+| `.github/workflows/build-linux.yml` | Native Linux build (no cross-compile toolchain needed, GUI enabled), packaged as `bit-block-V<version>-x86_64-linux-gnu.tar.gz`; the version is read from `BITBLOCK_RELEASE_VERSION` in `CMakeLists.txt`. The system-package step retries and falls back to a second Ubuntu mirror. |
 | `.github/workflows/build-macos.yml` | Native macOS builds for both Apple Silicon and Intel, packaged as `Bit-Block.zip` containing `Bitcoin-Qt.app`. Not code-signed/notarized. |
-| `.github/workflows/docker-images.yml` | Builds and publishes the node and DATUM gateway container images (amd64 and arm64) to GitHub Container Registry for the Umbrel and StartOS packages. Run by hand or on a published release. |
+| `.github/workflows/docker-images.yml` | Builds and publishes the node and DATUM gateway container images (amd64 and arm64) to GitHub Container Registry for the Umbrel and StartOS packages. Run by hand or on a published release. The image tag (for example `V4`) must match the tag used in the Umbrel and StartOS packages. |
+| `.github/workflows/build-startos.yml` | Builds the StartOS package from `packaging/start9/` into `.s9pk` files for x86_64 and aarch64 (Raspberry Pi) and uploads them as downloadable artifacts. Run by hand. Uses a throwaway signing key, so it produces test builds. |
 | `run.sh`, `scripts/secure_startup.sh`, `scripts/smoke_bit-block.sh` | Plain shell entry points for local build/run/smoke-testing, replacing an earlier Replit-specific workspace configuration. |
 | `src/bip39/bip39.h`, `bip39.cpp`, `wordlist_english.h` | SeedSigner-compatible dice-roll-to-mnemonic entropy derivation and standard BIP-39 seed derivation (PBKDF2-HMAC-SHA512). Mnemonics are whitespace-normalised before derivation, so extra spaces cannot silently produce a different wallet; non-ASCII passphrases are refused because Unicode (NFKD) normalisation is not implemented. Intermediate key material is wiped after use. |
 | `src/rpc/mnemonic.cpp` | Exposes the above as two RPC commands: `mnemonicfromdice` and `mnemonictoseed`. |
@@ -110,7 +117,28 @@ was forked from. Everything *not* listed here is inherited, shared code.
 | `-datum` option and `templatehint` ZMQ topic (`src/init.cpp`, `src/zmq/zmqpublishnotifier.{h,cpp}`, `zmqnotificationinterface.cpp`, `src/qt/optionsdialog.*`) | A one-flag preset (`-datum`, also a "Mine with DATUM" toggle in Options) that applies settings suited to solo/pool mining with an external DATUM Gateway, plus a rate-limited `zmqpubtemplatehint` notification. It does not configure DATUM Gateway itself, `blocknotify` or RPC credentials. On a pruned node the preset skips `-txindex` (the two are incompatible) instead of preventing startup. Stock DATUM Gateway does not consume the new topic yet. |
 | `ReplaceAll()` fix (`src/util/string.cpp`) | **Security fix.** The old implementation passed the replacement text to `std::regex_replace` as a format string, so a wallet name containing `$'` could inject content into the `-walletnotify` command (`%w`), which is run through a shell. Replaced with a literal, non-recursive find-and-replace (same contract as upstream Bitcoin Core PR #36048). |
 | Boost 1.91 compatibility (`src/txmempool.h`, `src/node/miner.h`, `src/txrequest.cpp`) | Boost 1.91 removed workarounds that the "struct inherits `indexed_by<...>`" pattern relied on. `indexed_by<...>` is now written inline in the three affected multi-index containers (matches upstream PR #35214). Needed because Homebrew on macOS always installs the newest Boost, while `depends/` pins an older one for Windows and Linux. |
+| `depends/packages/miniupnpc.mk` | The `miniupnpc` dependency is downloaded from the official GitHub release (`miniupnpc_2_3_3`, same SHA-256 as before) instead of the original host, which was often unreachable and made the Windows build fail. |
+| `src/test/util/setup_common.cpp`, `src/test/transaction_tests.cpp`, `src/test/miniscript_tests.cpp` | Test-only changes. The seven anti-spam rules are switched off at the start of every unit test so the stock tests run against default policy (`antispam_tests.cpp` turns them on where it checks them), and two tests that assumed the Knots 29.1 standard flags were corrected. |
 | `contrib/macdeploy/macdeployqtplus` | The macOS packaging script now resolves `@rpath/...` and `@loader_path/...` dependencies against the original library location instead of the copy inside the app bundle (Homebrew's `libbrotlidec` refers to `@rpath/libbrotlicommon.1.dylib`, which previously aborted `deploy`). The macOS workflow also no longer installs `berkeley-db@4` (disabled in Homebrew) or passes `-DWITH_BDB=ON`. |
+
+---
+
+## Upstream fixes ported in V4
+
+Bit-Block follows the main Bitcoin chain from a Bitcoin Knots v29.1 base. Knots 29.2 and later enforce BIP-110 as consensus rules, so Bit-Block does **not** rebase onto them; instead it ports upstream fixes one at a time. `UPSTREAM.md` is the full, maintained list. In summary, V4 includes:
+
+| Fix | Where |
+|---|---|
+| Use-after-free in `ConnectBlock` (CVE-2024-52911) | `src/validation.cpp` |
+| Crafted-transaction DoS: sighash cache, no duplicate script re-verification, no peer bans for transaction script failures (CVE-2025-46598) | `src/script/interpreter.*`, `src/policy/policy.*`, `src/validation.cpp`, `src/net_processing.cpp` |
+| Compact-block witness-mutation check and repeated `blocktxn` handling (CVE-2025-62859) | `src/blockencodings.*`, `src/net_processing.cpp` |
+| No whitelist permissions for Tor inbound connections (CVE-2025-62860) | `src/net.*` |
+| No TRUC sibling eviction when re-adding transactions after a reorg (CVE-2025-62861) | `src/validation.cpp` |
+| Wallet directory deletion safety after failed migration, restore or dump; wallet names with `.` or `..` refused; `sendall` and `IsFromMe` fixes | `src/wallet/*` |
+| `getblockheader` reports the target of the requested block | `src/rpc/blockchain.cpp` |
+| Netlink build fix | `src/common/netif.cpp` |
+
+Not ported on purpose: Knots' BIP-110 consensus enforcement and its commit to the block's transaction count, plus the miner block-weight reserve change.
 
 ---
 
